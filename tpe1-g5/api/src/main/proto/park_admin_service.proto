@@ -7,11 +7,12 @@ option java_multiple_files = true;
 
 
 service ParkAdminService {
-  rpc AddAttraction(AddAttractionRequest) returns (AddAttractionResponse);
-  rpc AddPass(AddPassRequest) returns (AddPassResponse);
-  rpc AddCapacity(AddCapacityRequest) returns (AddCapacityResponse);
+  rpc AddAttraction(AddAttractionRequest) returns (GenericMessageResponse);
+  rpc AddPass(AddPassRequest) returns (GenericMessageResponse);
+  rpc AddCapacity(AddCapacityRequest) returns (GenericMessageResponse);
 }
 
+// Transformar a lista porque se lee de un archivo
 message AddAttractionRequest {
   string attractionName = 1;
   string openingTime = 2;
@@ -19,26 +20,19 @@ message AddAttractionRequest {
   string slotSize = 4;
 }
 
-message AddAttractionResponse {
+message GenericMessageResponse {
   string message = 1;
 }
 
+// Transformar a lista porque se lee de un archivo
 message AddPassRequest {
   string UUID = 1;
   string passType = 2;
   int32 passDay = 3;
 }
 
-message AddPassResponse {
-  string message = 1;
-}
-
 message AddCapacityRequest {
   string attractionName = 1;
   int32 day = 2;
   int32 capacity = 3;
-}
-
-message AddCapacityResponse {
-
 }
