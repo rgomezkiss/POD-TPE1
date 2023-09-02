@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package park_admin;
+package booking;
 
 option java_package = "ar.edu.itba.pod.grpc.booking";
 option java_multiple_files = true;
 
 
-service ParkAdminService {
+service BookingService {
   rpc GetAttractions(GetAttractionsRequest) returns (GetAttractionsResponse);
   rpc GetAvailability(GetAvailabilityRequest) returns (GetAvailabilityResponse);
   rpc Book(BookRequest) returns (BookResponse);
@@ -18,8 +18,9 @@ message GetAttractionsRequest {
   string message = 1;
 }
 
+// List<Attraction>
 message GetAttractionsResponse {
-//  Lista de atracciones en general
+  string message = 1;
 }
 
 message GetAvailabilityRequest {
@@ -29,8 +30,9 @@ message GetAvailabilityRequest {
   string timeRangeEnd = 4;
 }
 
+// List<...>
 message GetAvailabilityResponse {
-// ...
+  string message = 1;
 }
 
 message BookRequest {

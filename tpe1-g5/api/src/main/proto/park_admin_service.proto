@@ -12,10 +12,13 @@ service ParkAdminService {
   rpc AddCapacity(AddCapacityRequest) returns (GenericMessageResponse);
 }
 
-// Transformar a lista porque se lee de un archivo
 message AddAttractionRequest {
+  repeated Attraction attractionList = 1;
+}
+
+message Attraction {
   string attractionName = 1;
-  string openingTime = 2;
+  string openingTime = 2; //HH:MM
   string closingTime = 3;
   string slotSize = 4;
 }
@@ -24,11 +27,20 @@ message GenericMessageResponse {
   string message = 1;
 }
 
-// Transformar a lista porque se lee de un archivo
 message AddPassRequest {
+  repeated Attraction passList = 1;
+}
+
+message Pass {
   string UUID = 1;
-  string passType = 2;
+  PassType passType = 2;
   int32 passDay = 3;
+}
+
+enum PassType {
+    UNLIMITED = 0;
+    THREE = 1;
+    HALF_DAY = 2;
 }
 
 message AddCapacityRequest {

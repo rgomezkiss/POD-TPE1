@@ -1,28 +1,31 @@
 syntax = "proto3";
 
-package park_admin;
+package park_consult;
 
 option java_package = "ar.edu.itba.pod.grpc.park_consult";
 option java_multiple_files = true;
 
 
-service ParkAdminService {
+service ParkConsultService {
   rpc GetSuggestedCapacity(GetSuggestedCapacityRequest) returns (GetSuggestedCapacityResponse);
   rpc GetBookings(GetBookingsRequest) returns (GetBookingsResponse);
 }
 
 message GetSuggestedCapacityRequest {
-//
+  string message = 1;
 }
 
+//...
 message GetSuggestedCapacityResponse {
-//
+  string message = 1;
 }
 
+//List<Bookings>
 message GetBookingsRequest {
-//
+  string message = 1;
 }
 
-message GetBookingsResponse {
 //
+message GetBookingsResponse {
+  string message = 1;
 }
