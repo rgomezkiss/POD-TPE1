@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package park_admin;
+
+option java_package = "ar.edu.itba.pod.grpc.booking";
+option java_multiple_files = true;
+
+
+service ParkAdminService {
+  rpc GetAttractions(GetAttractionsRequest) returns (GetAttractionsResponse);
+  rpc GetAvailability(GetAvailabilityRequest) returns (GetAvailabilityResponse);
+  rpc Book(BookRequest) returns (BookResponse);
+  rpc ConfirmBooking(BookRequest) returns (BookResponse);
+  rpc CancelBooking(BookRequest) returns (BookResponse);
+}
+
+message GetAttractionsRequest {
+  string message = 1;
+}
+
+message GetAttractionsResponse {
+//  Lista de atracciones en general
+}
+
+message GetAvailabilityRequest {
+  int32 day = 1;
+  string attractionName = 2;
+  string timeRangeStart = 3;
+  string timeRangeEnd = 4;
+}
+
+message GetAvailabilityResponse {
+// ...
+}
+
+message BookRequest {
+  int32 day = 1;
+  string attractionName = 2;
+  string timeSlot = 3;
+  string UUID = 4;
+}
+
+message BookResponse {
+  string message = 1;
+}

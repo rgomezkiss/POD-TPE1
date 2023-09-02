@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package park_admin;
+
+option java_package = "ar.edu.itba.pod.grpc.park_admin";
+option java_multiple_files = true;
+
+
+service ParkAdminService {
+  rpc AddAttraction(AddAttractionRequest) returns (AddAttractionResponse);
+  rpc AddPass(AddPassRequest) returns (AddPassResponse);
+  rpc AddCapacity(AddCapacityRequest) returns (AddCapacityResponse);
+}
+
+message AddAttractionRequest {
+  string attractionName = 1;
+  string openingTime = 2;
+  string closingTime = 3;
+  string slotSize = 4;
+}
+
+message AddAttractionResponse {
+  string message = 1;
+}
+
+message AddPassRequest {
+  string UUID = 1;
+  string passType = 2;
+  int32 passDay = 3;
+}
+
+message AddPassResponse {
+  string message = 1;
+}
+
+message AddCapacityRequest {
+  string attractionName = 1;
+  int32 day = 2;
+  int32 capacity = 3;
+}
+
+message AddCapacityResponse {
+
+}
