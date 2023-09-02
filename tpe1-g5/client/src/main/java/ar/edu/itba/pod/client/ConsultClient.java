@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
-public class AdminClient {
-    private static Logger logger = LoggerFactory.getLogger(Client.class);
+public class ConsultClient {
+    private static Logger logger = LoggerFactory.getLogger(ConsultClient.class);
 
     private final static String[] actions = {"capacity", "confirmed"};
 
@@ -37,5 +37,6 @@ public class AdminClient {
 
     private static boolean validateParameters() {
 //    Acá validamos primero que la acción tenga sentido y después vemos los parámetros
+        return false;
     }
 }

@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
-public class AdminClient {
-    private static Logger logger = LoggerFactory.getLogger(Client.class);
+public class BookingClient {
+    private static Logger logger = LoggerFactory.getLogger(BookingClient.class);
 
     private final static String[] actions = {"attractions", "availability", "book", "confirm", "cancel"};
 
@@ -36,7 +36,8 @@ public class AdminClient {
         }
     }
 
-    private static boolean validateParameters()1 {
+    private static boolean validateParameters() {
 //    Acá validamos primero que la acción tenga sentido y después vemos los parámetros
+        return false;
     }
 }
