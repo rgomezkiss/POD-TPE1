@@ -11,9 +11,12 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 public class AdminClient {
-    private static Logger logger = LoggerFactory.getLogger(AdminClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(AdminClient.class);
 
     private final static String[] actions = {"rides", "tickets", "slots"};
+
+    private final static int MAX_YEAR = 365;
+    private final static int MIN_YEAR = 1;
 
     public static void main(String[] args) throws InterruptedException {
         logger.info("tpe1-g5 Client Starting ...");
@@ -48,7 +51,7 @@ public class AdminClient {
 
         if (args[1].equals(actions[2])) {
             int day = Integer.getInteger(args[4]);
-            if (day < 1 || day > 365) {
+            if (day < MIN_YEAR || day > MAX_YEAR) {
                 System.out.println("Invalid day");
                 return false;
             }
