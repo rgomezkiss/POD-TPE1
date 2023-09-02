@@ -1,4 +1,4 @@
-package ar.edu.itba.pod.client;
+package ar.edu.itba.pod.client.utils;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ public class ClientUtils {
 
     public void printSchedule(List<String> slots) {
         // Imprimir encabezado
-        System.out.println("Slot  | Capacity  | Pending   | Confirmed | Attraction");
+        System.out.println("Slot | Capacity | Pending | Confirmed | Attraction");
 
         // Imprimir cada franja horaria en el formato deseado
         for (String timeSlot : slots) {

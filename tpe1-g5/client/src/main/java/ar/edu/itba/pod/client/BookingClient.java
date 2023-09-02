@@ -11,44 +11,40 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class BookingClient {
-    private static Logger logger = LoggerFactory.getLogger(BookingClient.class);
-
+    private final static Logger logger = LoggerFactory.getLogger(BookingClient.class);
     private final static int MAX_YEAR = 365;
     private final static int MIN_YEAR = 1;
     private final static String[] actions = {"attractions", "availability", "book", "confirm", "cancel"};
 
-    //Estas colection de abajo deberian ser bloqueantes
-
+    // TODO
+    // Estas colections de abajo deberian ser bloqueantes
     private static List<String> rides = new ArrayList<>();
-
     private static List<String> slots = new ArrayList<>();
 
     public static void main(String[] args) throws InterruptedException {
-        logger.info("tpe1-g5 Client Starting ...");
-        logger.info("grpc-com-patterns Client Starting ...");
+        logger.info("tpe1-g5 Booking Client Starting ...");
+        logger.info("grpc-com-patterns Booking Client Starting ...");
 
-        String serverAddress = args[0];
-        String actionName = args[1];
-        String dayOfYear = args[2];
-        String rideName = args[3];
-        String visitorId = args[4];
-        String bookingSlotFrom = args[5];
-        String bookingSlotTo = args[6];
+        final String serverAddress = args[0];
+        final String actionName = args[1];
+        final String dayOfYear = args[2];
+        final String rideName = args[3];
+        final String visitorId = args[4];
+        final String bookingSlotFrom = args[5];
+        final String bookingSlotTo = args[6];
 
-        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051)
-                .usePlaintext()
-                .build();
-
+        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051).usePlaintext().build();
 
         try {
-
+            // TODO
+            // Me comunico con el servidor e imprimo la respuesta
         } finally {
             channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
         }
     }
 
     private static boolean validateParameters(String[] args) {
-//    Acá validamos primero que la acción tenga sentido y después vemos los parámetros
+        // Acá validamos primero que la acción tenga sentido y después vemos los parámetros
 
         if (Arrays.stream(actions).noneMatch(action -> action.equals(args[1]))) {
             System.out.println("Invalid action for admin-cli");
@@ -85,9 +81,7 @@ public class BookingClient {
                 }
                 //TODO Retornar slots de la atraccion rideName en el rango
 
-            }
-
-            else if (rideName.isEmpty()){
+            } else if (rideName.isEmpty()) {
                 if (!slots.contains(slotFrom) && !slots.contains(slotTo)) {
                     System.out.println("Slot range dos not exist");
                     return false;

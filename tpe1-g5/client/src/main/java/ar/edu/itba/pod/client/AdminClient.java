@@ -11,32 +11,28 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 public class AdminClient {
-    private static final Logger logger = LoggerFactory.getLogger(AdminClient.class);
-
+    private final static Logger logger = LoggerFactory.getLogger(AdminClient.class);
     private final static String[] actions = {"rides", "tickets", "slots"};
-
     private final static int MAX_YEAR = 365;
     private final static int MIN_YEAR = 1;
 
     public static void main(String[] args) throws InterruptedException {
-        logger.info("tpe1-g5 Client Starting ...");
-        logger.info("grpc-com-patterns Client Starting ...");
+        logger.info("tpe1-g5 Admin Client Starting ...");
+        logger.info("grpc-com-patterns Admin Client Starting ...");
 
-        if (validateParameters(args)){
-            String serverAddress = args[0];
-            String actionName = args[1];
-            String fileName = args[2];
-            String rideName = args[3];
-            String dayOfYear = args[4];
-            String capacity = args[5];
+        if (validateParameters(args)) {
+            final String serverAddress = args[0];
+            final String actionName = args[1];
+            final String fileName = args[2];
+            final String rideName = args[3];
+            final String dayOfYear = args[4];
+            final String capacity = args[5];
 
-            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051)
-                    .usePlaintext()
-                    .build();
-
+            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051).usePlaintext().build();
 
             try {
-// Me comunico con el servidor e imprimo la respuesta
+                // TODO
+                // Me comunico con el servidor e imprimo la respuesta
             } finally {
                 channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
             }
@@ -44,7 +40,7 @@ public class AdminClient {
     }
 
     private static boolean validateParameters(String[] args) {
-        if(Arrays.stream(actions).noneMatch(action -> action.equals(args[1]))){
+        if (Arrays.stream(actions).noneMatch(action -> action.equals(args[1]))) {
             System.out.println("Invalid action for admin-cli");
             return false;
         }
@@ -66,10 +62,10 @@ public class AdminClient {
         Path path = Paths.get(args[2]);
 
         if (path.toFile().exists()) {
-            //Parsear el archivo según el comando
+            // TODO
+            // Parsear el archivo según el comando
             return true;
-        }
-        else {
+        } else {
             System.out.println("Invalid filepath");
             return false;
         }
