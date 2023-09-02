@@ -17,6 +17,8 @@ public class BookingClient {
     private final static int MIN_YEAR = 1;
     private final static String[] actions = {"attractions", "availability", "book", "confirm", "cancel"};
 
+    //Estas colection de abajo deberian ser bloqueantes
+
     private static List<String> rides = new ArrayList<>();
 
     private static List<String> slots = new ArrayList<>();
