@@ -52,6 +52,8 @@ public class BookingClient {
             System.out.println("Invalid action for admin-cli");
             return false;
         }
+
+        String visitorId = args[5]; // TODO agregar los books aca
         if (args[1].equals(actions[0])) {
 
             //TODO imprimir detalle atractions
