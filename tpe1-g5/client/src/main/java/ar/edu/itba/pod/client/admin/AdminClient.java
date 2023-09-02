@@ -1,4 +1,4 @@
-package ar.edu.itba.pod.client;
+package ar.edu.itba.pod.client.admin;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -17,8 +17,7 @@ public class AdminClient {
     private final static int MIN_YEAR = 1;
 
     public static void main(String[] args) throws InterruptedException {
-        logger.info("tpe1-g5 Admin Client Starting ...");
-        logger.info("grpc-com-patterns Admin Client Starting ...");
+        logger.info("Admin Client Starting ...");
 
         if (validateParameters(args)) {
             final String serverAddress = args[0];
