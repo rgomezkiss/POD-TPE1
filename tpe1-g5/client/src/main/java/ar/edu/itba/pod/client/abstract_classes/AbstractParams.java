@@ -14,11 +14,9 @@ public abstract class AbstractParams {
     public String getServerAddress() {
         return serverAddress;
     }
-
     public String getAction() {
         return action;
     }
-
     public Integer getDay() {
         return day;
     }

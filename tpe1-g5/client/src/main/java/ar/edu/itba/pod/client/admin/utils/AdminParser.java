@@ -1,14 +1,12 @@
 package ar.edu.itba.pod.client.admin.utils;
 
 import ar.edu.itba.pod.client.abstract_classes.AbstractParams;
+import ar.edu.itba.pod.client.admin.actions.AdminActions;
 import org.apache.commons.cli.*;
-import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
+import java.io.File;
 
 public class AdminParser {
 
@@ -21,11 +19,8 @@ public class AdminParser {
     private final static String RIDE = "Dride";
     private final static String DAY = "Dday";
     private final static String CAPACITY = "Dcapacity";
-
-    // TODO: CHANGE
-    private final static String[] actions = {"rides", "tickets", "slots"};
-    private final static int MAX_DAY = 365;
     private final static int MIN_DAY = 1;
+    private final static int MAX_DAY = 365;
 
     public AdminParser() {
         options.addRequiredOption(SERVER_ADDRESS, SERVER_ADDRESS, true, "Admin server address");
@@ -36,56 +31,93 @@ public class AdminParser {
         options.addOption(CAPACITY, CAPACITY, true, "Capacity of the slots");
     }
 
-    public AbstractParams parse(String[] args){
+    // -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName [ -DinPath=filename | -Dride=rideName | -Dday=dayOfYear | -Dcapacity=amount ]
+    public AbstractParams parse(String[] args) {
         try {
-            CommandLine commandLine = parser.parse(options, args);
+            final CommandLine cmd = parser.parse(options, args);
 
-            String serverAddress = commandLine.getOptionValue(SERVER_ADDRESS);
-            String action = commandLine.getOptionValue(ACTION);
-            String path = commandLine.getOptionValue(PATH);
-            String ride = commandLine.getOptionValue(RIDE);
+            final String serverAddress = cmd.getOptionValue(SERVER_ADDRESS);
+            final AdminActions action;
 
-            String dayString = commandLine.getOptionValue(DAY);
-
-            Integer capacity = Integer.parseInt(commandLine.getOptionValue(CAPACITY));
-            Integer day = Integer.parseInt(commandLine.getOptionValue(DAY));
-
-            // TODO: Ver de hacer un AdminActionsEnum o... algo abstracto
-            if (Arrays.stream(actions).noneMatch(a -> a.equals(action))) {
-                System.out.println("Invalid action for admin-cli");
+            try {
+                action = AdminActions.valueOf(cmd.getOptionValue(ACTION).toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid action");
+                logger.error("Invalid action");
                 return null;
             }
 
-            if (action.equals(actions[2])) {
-                if (day < MIN_DAY || day > MAX_DAY) {
-                    System.out.println("Invalid day");
-                    return null;
+            switch (action) {
+                case RIDES, TICKETS -> {
+                    final String path;
+
+                    if (cmd.hasOption(PATH)) {
+                        path = cmd.getOptionValue(DAY);
+                    } else {
+                        System.out.println("Path is required for this action");
+                        logger.error("Path is required for this action");
+                        return null;
+                    }
+
+                    File file = new File(path);
+                    if (!file.getName().endsWith(".csv")) {
+                        System.out.println("The file is not a csv file");
+                        logger.error("The file is not a csv file");
+                        return null;
+                    }
+
+                    if (!file.exists()) {
+                        System.out.println("The file does not exist");
+                        logger.error("The file does not exist");
+                        return null;
+                    }
+                    // TODO
+                    // Parsear el archivo según el comando
+                    // Dividir en casos para acciones rides y passes...
+
+                    return new AdminParams(serverAddress, String.valueOf(action), path);
+
                 }
-                if (capacity < 0) {
-                    System.out.println("Invalid capacity");
-                    return null;
+                case SLOTS -> {
+                    final String ride;
+                    final int day;
+                    final int capacity;
+                    if (cmd.hasOption(DAY)) {
+                        day = Integer.parseInt(cmd.getOptionValue(DAY));
+                        if (day < MIN_DAY || day > MAX_DAY) {
+                            System.out.println("Invalid day");
+                            return null;
+                        }
+                    } else {
+                        System.out.println("Day is required for this action");
+                        logger.error("Day is required for this action");
+                        return null;
+                    }
+                    if (cmd.hasOption(CAPACITY)) {
+                        capacity = Integer.parseInt(cmd.getOptionValue(CAPACITY));
+                        if (capacity < 0) {
+                            System.out.println("Invalid capacity");
+                            return null;
+                        }
+                    } else {
+                        System.out.println("Capacity is required for this action");
+                        logger.error("Capacity is required for this action");
+                        return null;
+                    }
+                    if (cmd.hasOption(RIDE)) {
+                        ride = cmd.getOptionValue(RIDE);
+                    } else {
+                        System.out.println("Ride name is required for this action");
+                        logger.error("Ride name is required for this action");
+                        return null;
+                    }
+                    return new AdminParams(serverAddress, String.valueOf(action), day, ride, capacity);
                 }
-
-                return new AdminParams(serverAddress, action, day, ride, capacity);
             }
-
-            Path pathToCheck = Paths.get(path);
-
-            if (pathToCheck.toFile().exists()) {
-                // TODO
-                // Parsear el archivo según el comando
-                // Dividir en casos para acciones rides y passes...
-
-                // retornar una instancia valida de params
-                return new AdminParams(serverAddress, action, day, path);
-
-            } else {
-                System.out.println("Invalid filepath");
-                return null;
-            }
-        } catch(ParseException e) {
+        } catch (ParseException e) {
             logger.error("Error parsing command line arguments");
             return null;
         }
+        return null;
     }
 }

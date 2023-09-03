@@ -7,8 +7,8 @@ public class AdminParams extends AbstractParams {
     private final String ride;
     private final Integer capacity;
 
-    public AdminParams(String serverAddress, String action, Integer day, String inputPath) {
-        super(serverAddress, action, day);
+    public AdminParams(String serverAddress, String action, String inputPath) {
+        super(serverAddress, action, null);
         this.inputPath = inputPath;
         this.ride = null;
         this.capacity = null;
@@ -24,11 +24,9 @@ public class AdminParams extends AbstractParams {
     public String getInputPath() {
         return inputPath;
     }
-
     public String getRide() {
         return ride;
     }
-
     public Integer getCapacity() {
         return capacity;
     }

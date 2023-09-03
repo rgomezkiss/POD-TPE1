@@ -7,9 +7,6 @@ import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 public class AdminClient {
@@ -21,7 +18,7 @@ public class AdminClient {
         AbstractParams params = new AdminParser().parse(args);
 
         if (params == null) {
-            return ;
+            return;
         }
 
         ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051).usePlaintext().build();
