@@ -2,6 +2,7 @@ package ar.edu.itba.pod.client.admin.utils;
 
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.admin.actions.AdminActions;
+import ar.edu.itba.pod.client.utils.ServerAddress;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +36,14 @@ public class AdminParser {
     public AbstractParams parse(String[] args) {
         try {
             final CommandLine cmd = parser.parse(options, args);
-            final String serverAddress = cmd.getOptionValue(SERVER_ADDRESS);
+            final ServerAddress serverAddress = new ServerAddress(cmd.getOptionValue(SERVER_ADDRESS));
             final AdminActions action;
+
+            if(!serverAddress.isValid()){
+                System.out.println("Invalid server address");
+                logger.error("Invalid server address");
+                return null;
+            }
 
             try {
                 action = AdminActions.valueOf(cmd.getOptionValue(ACTION).toUpperCase());
@@ -69,10 +76,6 @@ public class AdminParser {
                         logger.error("The file does not exist");
                         return null;
                     }
-
-                    // TODO
-                    // Parsear el archivo según el comando
-                    // Dividir en casos para acciones rides y passes...
 
                     return new AdminParams(serverAddress, String.valueOf(action), path);
 

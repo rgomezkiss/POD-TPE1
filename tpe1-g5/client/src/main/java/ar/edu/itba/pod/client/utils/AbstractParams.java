@@ -1,17 +1,17 @@
 package ar.edu.itba.pod.client.utils;
 
 public abstract class AbstractParams {
-    private final String serverAddress;
+    private final ServerAddress serverAddress;
     private final String action;
     private final Integer day;
 
-    protected AbstractParams(String serverAddress, String action, Integer day) {
+    protected AbstractParams(ServerAddress serverAddress, String action, Integer day) {
         this.serverAddress = serverAddress;
         this.action = action;
         this.day = day;
     }
 
-    public String getServerAddress() {
+    public ServerAddress getServerAddress() {
         return serverAddress;
     }
     public String getAction() {
