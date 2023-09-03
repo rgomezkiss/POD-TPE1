@@ -7,43 +7,39 @@ option java_multiple_files = true;
 
 
 service ParkAdminService {
-  rpc AddAttraction(AddAttractionRequest) returns (GenericMessageResponse);
-  rpc AddPass(AddPassRequest) returns (GenericMessageResponse);
-  rpc AddCapacity(AddCapacityRequest) returns (GenericMessageResponse);
-}
-
-message AddAttractionRequest {
-  repeated Attraction attractionList = 1;
+  rpc AddAttraction(Attraction) returns (BooleanResponse);
+  rpc AddTicket(Ticket) returns (BooleanResponse);
+  rpc AddSlot(AddSlotRequest) returns (GenericMessageResponse);
 }
 
 message Attraction {
   string attractionName = 1;
   string openingTime = 2; //HH:MM
   string closingTime = 3;
-  string slotSize = 4;
+  int32 slotSize = 4;
+}
+
+message BooleanResponse {
+  bool value = 1;
 }
 
 message GenericMessageResponse {
   string message = 1;
 }
 
-message AddPassRequest {
-  repeated Attraction passList = 1;
-}
-
-message Pass {
+message Ticket {
   string UUID = 1;
-  PassType passType = 2;
-  int32 passDay = 3;
+  TicketType ticketType = 2;
+  int32 ticketDay = 3;
 }
 
-enum PassType {
+enum TicketType {
     UNLIMITED = 0;
     THREE = 1;
     HALF_DAY = 2;
 }
 
-message AddCapacityRequest {
+message AddSlotRequest {
   string attractionName = 1;
   int32 day = 2;
   int32 capacity = 3;

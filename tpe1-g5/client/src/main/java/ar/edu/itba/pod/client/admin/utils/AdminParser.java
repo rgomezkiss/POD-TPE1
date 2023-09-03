@@ -58,7 +58,7 @@ public class AdminParser {
                     final String path;
 
                     if (cmd.hasOption(PATH)) {
-                        path = cmd.getOptionValue(DAY);
+                        path = cmd.getOptionValue(PATH);
                     } else {
                         System.out.println("Path is required for this action");
                         logger.error("Path is required for this action");
@@ -66,14 +66,16 @@ public class AdminParser {
                     }
 
                     File file = new File(path);
-                    if (!file.getName().endsWith(".csv")) {
-                        System.out.println("The file is not a csv file");
-                        logger.error("The file is not a csv file");
-                        return null;
-                    }
+
                     if (!file.exists()) {
                         System.out.println("The file does not exist");
                         logger.error("The file does not exist");
+                        return null;
+                    }
+
+                    if (!file.getName().endsWith(".csv")) {
+                        System.out.println("The file is not a csv file");
+                        logger.error("The file is not a csv file");
                         return null;
                     }
 

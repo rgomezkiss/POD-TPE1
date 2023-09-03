@@ -7,7 +7,7 @@ public class ServerAddress {
 
     private final String host;
     private final int port;
-    private final static Pattern PATTERN = Pattern.compile("^(?<host>localhost|\\d?\\d?\\d(?:\\.\\d{1,3}){3}):(?<port>\\d{1,4})$");
+    private final static Pattern PATTERN = Pattern.compile("^(?<host>localhost|\\d?\\d?\\d(?:\\.\\d{1,3}){3}):(?<port>\\d{1,5})$");
 
     public ServerAddress(String serverAddress){
         Matcher matcher = PATTERN.matcher(serverAddress);

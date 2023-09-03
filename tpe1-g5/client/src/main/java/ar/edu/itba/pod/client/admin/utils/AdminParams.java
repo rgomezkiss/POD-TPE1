@@ -4,7 +4,7 @@ import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.ServerAddress;
 
 public class AdminParams extends AbstractParams {
-    private final String inputPath; // o archivo ya parseado...
+    private final String inputPath;
     private final String ride;
     private final Integer capacity;
 

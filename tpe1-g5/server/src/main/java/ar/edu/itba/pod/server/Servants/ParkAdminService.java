@@ -17,34 +17,19 @@ public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplB
     }
 
     @Override
-    public void addAttraction(AddAttractionRequest attractionRequest, StreamObserver<GenericMessageResponse> responseObserver) {
-        List<Attraction> list = attractionRequest.getAttractionListList();
-
-        int added = 0;
-        int not_added = 0;
-
-        for (Attraction attraction: list) {
-            if (parkData.addAttraction(attraction.getAttractionName(), attraction)) {
-                added ++;
-            }
-            else {
-                not_added ++;
-            }
-        }
-
-        String returnMessage = "Cannot add " + not_added + " attractions\n" + added + " attractions added";
-        GenericMessageResponse response = GenericMessageResponse.newBuilder().setMessage(returnMessage).build();
+    public void addAttraction(Attraction attraction, StreamObserver<BooleanResponse> responseObserver) {
+        BooleanResponse response = BooleanResponse.newBuilder().setValue(parkData.addAttraction(attraction.getAttractionName(), attraction)).build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void addPass(AddPassRequest request, StreamObserver<GenericMessageResponse> responseObserver) {
+    public void addTicket(Ticket ticket, StreamObserver<BooleanResponse> responseObserver) {
 
     }
 
     @Override
-    public void addCapacity(AddCapacityRequest request, StreamObserver<GenericMessageResponse> responseObserver) {
+    public void addSlot(AddSlotRequest request, StreamObserver<GenericMessageResponse> responseObserver) {
 
     }
 }
