@@ -18,14 +18,16 @@ public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplB
 
     @Override
     public void addAttraction(Attraction attraction, StreamObserver<BooleanResponse> responseObserver) {
-        BooleanResponse response = BooleanResponse.newBuilder().setValue(parkData.addAttraction(attraction.getAttractionName(), attraction)).build();
+        BooleanResponse response = BooleanResponse.newBuilder().setValue(parkData.addAttraction(attraction)).build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
     public void addTicket(Ticket ticket, StreamObserver<BooleanResponse> responseObserver) {
-
+        BooleanResponse response = BooleanResponse.newBuilder().setValue(parkData.addTicket(ticket)).build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
     @Override

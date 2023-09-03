@@ -11,16 +11,35 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ParkData {
     private final Map<String, Attraction> attractions = new ConcurrentHashMap<>();
     //UserId -> Day -> Pass
-    private final Map<String, Map<Integer, Ticket>> passes = new ConcurrentHashMap<>();
+    private final Map<String, Map<Integer, Ticket>> tickets = new ConcurrentHashMap<>();
 
     public Map<String, Attraction> getAttractions() {
         return attractions;
     }
 
-    public boolean addAttraction(String name, Attraction attraction) {
+    public boolean addAttraction(Attraction attraction) {
         // TODO: agregar validaciones para especificar errores:
-        // Duplicate name. invalidTime, slotSize negative, slotSize not enough. Agregar en logger...
-        return attractions.put(name, attraction) == null;
+        // Duplicate name.
+        // InvalidTime,
+        // slotSize negative,
+        // slotSize not enough.
+        // Recién ahí devolver
+        return attractions.put(attraction.getAttractionName(), attraction) == null;
+    }
+
+    public boolean addTicket(Ticket ticket) {
+        // TODO: agregar validaciones para especificar errores:
+        //UUID no valido
+        //type not valid
+
+        //day not valid
+
+        //already has ticket
+
+        tickets.putIfAbsent(ticket.getUUID(), new ConcurrentHashMap<>());
+
+        // Podría solo tener el ticket type al final tal vez
+        return tickets.get(ticket.getUUID()).put(ticket.getTicketDay(), ticket) == null;
     }
 
 }
