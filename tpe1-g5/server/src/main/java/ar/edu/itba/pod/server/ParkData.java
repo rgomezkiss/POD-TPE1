@@ -1,12 +1,10 @@
 package ar.edu.itba.pod.server;
 
-
 import ar.edu.itba.pod.grpc.park_admin.Attraction;
 import ar.edu.itba.pod.grpc.park_admin.Ticket;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 
 public class ParkData {
     private final Map<String, Attraction> attractions = new ConcurrentHashMap<>();

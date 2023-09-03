@@ -8,18 +8,15 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 public class Server {
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
+    private final static Logger logger = LoggerFactory.getLogger(Server.class);
+    private final static Integer port = 50051;
 
     public static void main(String[] args) throws InterruptedException, IOException {
-        logger.info(" Server Starting ...");
-
-        int port = 50051;
+        logger.info("Server Starting ...");
 
         ParkData parkData = new ParkData();
 
-        io.grpc.Server server = ServerBuilder.forPort(port)
-                .addService(new ParkAdminService(parkData))
-                .build();
+        io.grpc.Server server = ServerBuilder.forPort(port).addService(new ParkAdminService(parkData)).build();
         server.start();
         logger.info("Server started, listening on " + port);
         server.awaitTermination();

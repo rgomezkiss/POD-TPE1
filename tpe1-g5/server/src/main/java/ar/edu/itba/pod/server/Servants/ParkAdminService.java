@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-
-public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplBase{
+public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplBase {
     private final ParkData parkData;
+
     public ParkAdminService(ParkData parkData) {
         this.parkData = parkData;
     }

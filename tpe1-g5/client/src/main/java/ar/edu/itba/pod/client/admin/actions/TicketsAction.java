@@ -25,22 +25,21 @@ public class TicketsAction implements Action {
         int added = 0;
         int notAdded = 0;
 
-        for (Ticket ticket: toAddTickets) {
+        for (Ticket ticket : toAddTickets) {
             BooleanResponse booleanResponse = blockingStub.addTicket(ticket);
             if (booleanResponse.getValue()) {
-                added ++;
-            }
-            else {
+                added++;
+            } else {
                 notAdded++;
             }
         }
 
         // Imprimo respuesta
-        if(notAdded > 0) {
+        if (notAdded > 0) {
             System.out.println("Cannot add " + notAdded + " tickets");
         }
-        if(added > 0) {
-            System.out.println( added + " tickets added");
+        if (added > 0) {
+            System.out.println(added + " tickets added");
         }
     }
 

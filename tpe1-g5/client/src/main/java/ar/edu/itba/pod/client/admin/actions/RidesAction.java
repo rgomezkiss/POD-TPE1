@@ -27,22 +27,21 @@ public class RidesAction implements Action {
         int added = 0;
         int notAdded = 0;
 
-        for (Attraction attraction: toAddAttractions) {
+        for (Attraction attraction : toAddAttractions) {
             BooleanResponse booleanResponse = blockingStub.addAttraction(attraction);
             if (booleanResponse.getValue()) {
-                added ++;
-            }
-            else {
+                added++;
+            } else {
                 notAdded++;
             }
         }
 
         // Imprimo respuesta
-        if(notAdded > 0) {
+        if (notAdded > 0) {
             System.out.println("Cannot add " + notAdded + " attractions");
         }
-        if(added > 0) {
-            System.out.println( added + " attractions added");
+        if (added > 0) {
+            System.out.println(added + " attractions added");
         }
     }
 
