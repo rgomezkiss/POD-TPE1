@@ -1,5 +1,7 @@
 package ar.edu.itba.pod.client.admin;
 
+import ar.edu.itba.pod.client.abstract_classes.AbstractParams;
+import ar.edu.itba.pod.client.admin.utils.AdminParser;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;
@@ -12,61 +14,25 @@ import java.util.concurrent.TimeUnit;
 
 public class AdminClient {
     private final static Logger logger = LoggerFactory.getLogger(AdminClient.class);
-    private final static String[] actions = {"rides", "tickets", "slots"};
-    private final static int MAX_YEAR = 365;
-    private final static int MIN_YEAR = 1;
 
     public static void main(String[] args) throws InterruptedException {
         logger.info("Admin Client Starting ...");
 
-        if (validateParameters(args)) {
-            final String serverAddress = args[0];
-            final String actionName = args[1];
-            final String fileName = args[2];
-            final String rideName = args[3];
-            final String dayOfYear = args[4];
-            final String capacity = args[5];
+        AbstractParams params = new AdminParser().parse(args);
 
-            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051).usePlaintext().build();
-
-            try {
-                // TODO
-                // Me comunico con el servidor e imprimo la respuesta
-            } finally {
-                channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
-            }
-        }
-    }
-
-    private static boolean validateParameters(String[] args) {
-        if (Arrays.stream(actions).noneMatch(action -> action.equals(args[1]))) {
-            System.out.println("Invalid action for admin-cli");
-            return false;
+        if (params == null) {
+            return ;
         }
 
-        if (args[1].equals(actions[2])) {
-            int day = Integer.getInteger(args[4]);
-            if (day < MIN_YEAR || day > MAX_YEAR) {
-                System.out.println("Invalid day");
-                return false;
-            }
-            int capacity = Integer.getInteger(args[5]);
-            if (capacity < 0) {
-                System.out.println("Invalid capacity");
-                return false;
-            }
-            return true;
-        }
+        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051).usePlaintext().build();
 
-        Path path = Paths.get(args[2]);
-
-        if (path.toFile().exists()) {
+        try {
             // TODO
-            // Parsear el archivo según el comando
-            return true;
-        } else {
-            System.out.println("Invalid filepath");
-            return false;
+            // Me comunico con el servidor e imprimo la respuesta
+            // Acá llamamos a la clase Action (enum o abstracta), y ejecutamos
+            // action.connectToServer(params)
+        } finally {
+            channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
         }
     }
 }

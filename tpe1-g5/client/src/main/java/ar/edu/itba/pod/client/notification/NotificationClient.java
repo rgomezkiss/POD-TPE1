@@ -11,8 +11,8 @@ public class NotificationClient {
     private final static Logger logger = LoggerFactory.getLogger(NotificationClient.class);
 
     private final static String[] actions = {"capacity", "confirmed"};
-    private final static int MAX_YEAR = 365;
-    private final static int MIN_YEAR = 1;
+    private final static int MAX_DAY = 365;
+    private final static int MIN_DAY = 1;
 
     public static void main(String[] args) throws InterruptedException {
         logger.info("tpe1-g5 Notification Client Starting ...");
