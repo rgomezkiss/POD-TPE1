@@ -1,6 +1,6 @@
 package ar.edu.itba.pod.client.admin.utils;
 
-import ar.edu.itba.pod.client.abstract_classes.AbstractParams;
+import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.admin.actions.AdminActions;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
@@ -35,7 +35,6 @@ public class AdminParser {
     public AbstractParams parse(String[] args) {
         try {
             final CommandLine cmd = parser.parse(options, args);
-
             final String serverAddress = cmd.getOptionValue(SERVER_ADDRESS);
             final AdminActions action;
 
@@ -65,12 +64,12 @@ public class AdminParser {
                         logger.error("The file is not a csv file");
                         return null;
                     }
-
                     if (!file.exists()) {
                         System.out.println("The file does not exist");
                         logger.error("The file does not exist");
                         return null;
                     }
+
                     // TODO
                     // Parsear el archivo según el comando
                     // Dividir en casos para acciones rides y passes...
@@ -82,6 +81,7 @@ public class AdminParser {
                     final String ride;
                     final int day;
                     final int capacity;
+
                     if (cmd.hasOption(DAY)) {
                         day = Integer.parseInt(cmd.getOptionValue(DAY));
                         if (day < MIN_DAY || day > MAX_DAY) {
@@ -93,6 +93,7 @@ public class AdminParser {
                         logger.error("Day is required for this action");
                         return null;
                     }
+
                     if (cmd.hasOption(CAPACITY)) {
                         capacity = Integer.parseInt(cmd.getOptionValue(CAPACITY));
                         if (capacity < 0) {
@@ -104,6 +105,7 @@ public class AdminParser {
                         logger.error("Capacity is required for this action");
                         return null;
                     }
+
                     if (cmd.hasOption(RIDE)) {
                         ride = cmd.getOptionValue(RIDE);
                     } else {
@@ -111,10 +113,12 @@ public class AdminParser {
                         logger.error("Ride name is required for this action");
                         return null;
                     }
+
                     return new AdminParams(serverAddress, String.valueOf(action), day, ride, capacity);
                 }
             }
         } catch (ParseException e) {
+            System.out.println("Error parsing command line arguments");
             logger.error("Error parsing command line arguments");
             return null;
         }

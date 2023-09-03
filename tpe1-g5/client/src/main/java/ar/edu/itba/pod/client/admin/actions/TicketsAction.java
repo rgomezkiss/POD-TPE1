@@ -1,7 +1,7 @@
 package ar.edu.itba.pod.client.admin.actions;
 
-import ar.edu.itba.pod.client.abstract_classes.Action;
-import ar.edu.itba.pod.client.abstract_classes.AbstractParams;
+import ar.edu.itba.pod.client.utils.Action;
+import ar.edu.itba.pod.client.utils.AbstractParams;
 
 public class TicketsAction implements Action {
     @Override

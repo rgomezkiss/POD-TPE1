@@ -1,6 +1,6 @@
 package ar.edu.itba.pod.client.admin.utils;
 
-import ar.edu.itba.pod.client.abstract_classes.AbstractParams;
+import ar.edu.itba.pod.client.utils.AbstractParams;
 
 public class AdminParams extends AbstractParams {
     private final String inputPath; // o archivo ya parseado...

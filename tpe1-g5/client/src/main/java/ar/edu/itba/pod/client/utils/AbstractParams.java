@@ -1,4 +1,4 @@
-package ar.edu.itba.pod.client.abstract_classes;
+package ar.edu.itba.pod.client.utils;
 
 public abstract class AbstractParams {
     private final String serverAddress;

@@ -1,6 +1,6 @@
 package ar.edu.itba.pod.client.admin;
 
-import ar.edu.itba.pod.client.abstract_classes.AbstractParams;
+import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.admin.utils.AdminParser;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
