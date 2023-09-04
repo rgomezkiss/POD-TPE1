@@ -18,9 +18,15 @@ message GetAttractionsRequest {
   string message = 1;
 }
 
-// List<Attraction>
+// List<AttractionResponse>
 message GetAttractionsResponse {
-  string message = 1;
+  repeated AttractionResponse attractions = 1;
+}
+
+message AttractionResponse {
+  string attractionName = 1;
+  string openingTime = 2;
+  string closingTime = 3;
 }
 
 message GetAvailabilityRequest {

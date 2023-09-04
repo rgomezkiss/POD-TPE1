@@ -3,7 +3,7 @@ package ar.edu.itba.pod.client.admin.actions;
 import ar.edu.itba.pod.client.admin.utils.AdminParams;
 import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.client.utils.AbstractParams;
-import ar.edu.itba.pod.grpc.park_admin.Attraction;
+import ar.edu.itba.pod.grpc.park_admin.AddAttractionRequest;
 import ar.edu.itba.pod.grpc.park_admin.BooleanResponse;
 import ar.edu.itba.pod.grpc.park_admin.ParkAdminServiceGrpc;
 import io.grpc.ManagedChannel;
@@ -22,12 +22,12 @@ public class RidesAction implements Action {
         ParkAdminServiceGrpc.ParkAdminServiceBlockingStub blockingStub = ParkAdminServiceGrpc.newBlockingStub(channel);
 
         // Crear "dto" u objeto a enviar al server
-        List<Attraction> toAddAttractions = parseFile(adminParams.getInputPath());
+        List<AddAttractionRequest> toAddAttractions = parseFile(adminParams.getInputPath());
 
         int added = 0;
         int notAdded = 0;
 
-        for (Attraction attraction : toAddAttractions) {
+        for (AddAttractionRequest attraction : toAddAttractions) {
             BooleanResponse booleanResponse = blockingStub.addAttraction(attraction);
             if (booleanResponse.getValue()) {
                 added++;
@@ -45,13 +45,13 @@ public class RidesAction implements Action {
         }
     }
 
-    private static List<Attraction> parseFile(String path) {
-        List<Attraction> attractions = null;
+    private static List<AddAttractionRequest> parseFile(String path) {
+        List<AddAttractionRequest> attractions = null;
         try {
             attractions = Files.lines(Paths.get(path))
                     .skip(1) // Saltar la primera línea (encabezados)
                     .map(line -> line.split(";"))
-                    .map(data -> Attraction.newBuilder()
+                    .map(data -> AddAttractionRequest.newBuilder()
                             .setAttractionName(data[0])
                             .setOpeningTime(data[1])
                             .setClosingTime(data[2])

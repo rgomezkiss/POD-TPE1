@@ -7,12 +7,12 @@ option java_multiple_files = true;
 
 
 service ParkAdminService {
-  rpc AddAttraction(Attraction) returns (BooleanResponse);
+  rpc AddAttraction(AddAttractionRequest) returns (BooleanResponse);
   rpc AddTicket(Ticket) returns (BooleanResponse);
   rpc AddSlot(AddSlotRequest) returns (GenericMessageResponse);
 }
 
-message Attraction {
+message AddAttractionRequest {
   string attractionName = 1;
   string openingTime = 2; //HH:MM
   string closingTime = 3;

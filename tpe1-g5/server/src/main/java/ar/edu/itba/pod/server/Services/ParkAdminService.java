@@ -2,6 +2,7 @@ package ar.edu.itba.pod.server.Services;
 
 import ar.edu.itba.pod.grpc.park_admin.*;
 import ar.edu.itba.pod.server.ParkData;
+import ar.edu.itba.pod.server.models.ServerAttraction;
 import io.grpc.stub.StreamObserver;
 
 public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplBase {
@@ -12,8 +13,8 @@ public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplB
     }
 
     @Override
-    public void addAttraction(Attraction attraction, StreamObserver<BooleanResponse> responseObserver) {
-        BooleanResponse response = BooleanResponse.newBuilder().setValue(parkData.addAttraction(attraction)).build();
+    public void addAttraction(AddAttractionRequest attraction, StreamObserver<BooleanResponse> responseObserver) {
+        BooleanResponse response = BooleanResponse.newBuilder().setValue(parkData.addAttraction(new ServerAttraction(attraction))).build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }

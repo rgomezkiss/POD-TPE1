@@ -5,7 +5,6 @@ import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.booking.BookingServiceGrpc;
 import ar.edu.itba.pod.grpc.booking.GetAttractionsRequest;
 import ar.edu.itba.pod.grpc.booking.GetAttractionsResponse;
-import ar.edu.itba.pod.grpc.park_admin.Attraction;
 import io.grpc.ManagedChannel;
 
 import java.util.List;
@@ -16,6 +15,8 @@ public class AttractionsAction implements Action {
         BookingServiceGrpc.BookingServiceBlockingStub blockingStub = BookingServiceGrpc.newBlockingStub(channel);
 
         GetAttractionsResponse attractionsResponse = blockingStub.getAttractions(GetAttractionsRequest.newBuilder().build());
+
+        attractionsResponse.getAttractionsList().forEach((attractionResponse) -> System.out.println(attractionResponse.getAttractionName() + attractionResponse.getOpeningTime() + attractionResponse.getClosingTime()));
 
     }
 }
