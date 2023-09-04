@@ -41,7 +41,7 @@ public class BookingParser {
             final ServerAddress serverAddress = new ServerAddress(cmd.getOptionValue(SERVER_ADDRESS));
             final BookingActions action;
 
-            if(!serverAddress.isValid()){
+            if (!serverAddress.isValid()) {
                 System.out.println("Invalid server address");
                 logger.error("Invalid server address");
                 return null;
@@ -56,7 +56,8 @@ public class BookingParser {
             }
 
             switch (action) {
-                case ATTRACTIONS -> { }
+                case ATTRACTIONS -> {
+                }
                 case AVAILABILITY -> {
                     final int day;
                     final String slot;
@@ -86,7 +87,7 @@ public class BookingParser {
                     if (cmd.hasOption(RIDE)) {
                         ride = cmd.getOptionValue(RIDE);
                     }
-                    if(cmd.hasOption(SLOT_TO)){
+                    if (cmd.hasOption(SLOT_TO)) {
                         slotTo = cmd.getOptionValue(SLOT_TO);
                     }
 
@@ -126,7 +127,7 @@ public class BookingParser {
                         return null;
                     }
 
-                    if(cmd.hasOption(VISITOR)){
+                    if (cmd.hasOption(VISITOR)) {
                         visitorId = UUID.fromString(cmd.getOptionValue(VISITOR));
                     } else {
                         System.out.println("Visitor ID is required for this action");
