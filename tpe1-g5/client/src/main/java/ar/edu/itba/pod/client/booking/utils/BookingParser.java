@@ -57,10 +57,11 @@ public class BookingParser {
 
             switch (action) {
                 case ATTRACTIONS -> {
+                    return new BookingParams(serverAddress, action.name());
                 }
                 case AVAILABILITY -> {
-                    final int day;
-                    final String slot;
+                    int day;
+                    String slot;
                     String slotTo = null;
                     String ride = null;
 
@@ -68,6 +69,7 @@ public class BookingParser {
                         day = Integer.parseInt(cmd.getOptionValue(DAY));
                         if (day < MIN_DAY || day > MAX_DAY) {
                             System.out.println("Invalid day");
+                            logger.error("Invalid day");
                             return null;
                         }
                     } else {
@@ -103,6 +105,7 @@ public class BookingParser {
                         day = Integer.parseInt(cmd.getOptionValue(DAY));
                         if (day < MIN_DAY || day > MAX_DAY) {
                             System.out.println("Invalid day");
+                            logger.error("Invalid day");
                             return null;
                         }
                     } else {

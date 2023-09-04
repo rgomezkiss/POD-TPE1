@@ -3,14 +3,22 @@ package ar.edu.itba.pod.client.booking.utils;
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.ServerAddress;
 
+import java.awt.print.Book;
 import java.util.UUID;
 
 public class BookingParams extends AbstractParams {
-
     private final String ride;
     private final String slot;
     private final String slotTo;
     private final UUID visitorId;
+
+    public BookingParams(ServerAddress serverAddress, String action) {
+        super(serverAddress, action, null);
+        this.ride = null;
+        this.slot = null;
+        this.slotTo = null;
+        this.visitorId = null;
+    }
 
     public BookingParams(ServerAddress serverAddress, String action, Integer day, String ride, String slot, String slotTo) {
         super(serverAddress, action, day);

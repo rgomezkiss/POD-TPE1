@@ -1,6 +1,8 @@
 package ar.edu.itba.pod.server;
 
-import ar.edu.itba.pod.server.Servants.ParkAdminService;
+import ar.edu.itba.pod.server.Services.BookingService;
+import ar.edu.itba.pod.server.Services.ConsultService;
+import ar.edu.itba.pod.server.Services.ParkAdminService;
 import io.grpc.ServerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +18,12 @@ public class Server {
 
         ParkData parkData = new ParkData();
 
-        io.grpc.Server server = ServerBuilder.forPort(port).addService(new ParkAdminService(parkData)).build();
+        io.grpc.Server server = ServerBuilder.forPort(port)
+                .addService(new ParkAdminService(parkData))
+                .addService(new ConsultService(parkData))
+                .addService(new BookingService(parkData))
+                .build();
+
         server.start();
         logger.info("Server started, listening on " + port);
         server.awaitTermination();

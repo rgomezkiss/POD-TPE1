@@ -17,7 +17,7 @@ public class ConsultParser {
     private final static String SERVER_ADDRESS = "DserverAddress";
     private final static String ACTION = "Daction";
     private final static String DAY = "Dday";
-    private final static String RIDE = "Dride";
+    private final static String PATH = "DoutPath";
     private final static String VISITOR = "Dvisitor";
     private final static int MIN_DAY = 1;
     private final static int MAX_DAY = 365;
@@ -26,8 +26,8 @@ public class ConsultParser {
         options.addRequiredOption(SERVER_ADDRESS, SERVER_ADDRESS, true, "Admin server address");
         options.addRequiredOption(ACTION, ACTION, true, "Action to perform");
         options.addRequiredOption(DAY, DAY, true, "Day of the year");
-        options.addRequiredOption(RIDE, RIDE, true, "Ride name");
         options.addRequiredOption(VISITOR, VISITOR, true, "Visitor ID");
+        options.addOption(PATH, PATH, true, "Output file path");
     }
 
     // -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName -Dday=dayOfYear -Dride=rideName -Dvisitor=visitorId
@@ -36,9 +36,8 @@ public class ConsultParser {
             final CommandLine cmd = parser.parse(options, args);
             final ServerAddress serverAddress = new ServerAddress(cmd.getOptionValue(SERVER_ADDRESS));
             final ConsultActions action;
-            final int day = Integer.parseInt(cmd.getOptionValue(DAY));
-            final String ride = cmd.getOptionValue(RIDE);
-            final UUID visitorId = UUID.fromString(cmd.getOptionValue(VISITOR));
+            final String outPath;
+            int day;
 
             if (!serverAddress.isValid()) {
                 System.out.println("Invalid server address");
@@ -54,12 +53,28 @@ public class ConsultParser {
                 return null;
             }
 
-            if (day < MIN_DAY || day > MAX_DAY) {
-                System.out.println("Invalid day");
+            if (cmd.hasOption(DAY)) {
+                day = Integer.parseInt(cmd.getOptionValue(DAY));
+                if (day < MIN_DAY || day > MAX_DAY) {
+                    System.out.println("Invalid day");
+                    logger.error("Invalid day");
+                    return null;
+                }
+            } else {
+                System.out.println("Day is required for this action");
+                logger.error("Day is required for this action");
                 return null;
             }
 
-            return new ConsultParams(serverAddress, String.valueOf(action), day, ride, visitorId);
+            if (cmd.hasOption(PATH)) {
+                outPath = cmd.getOptionValue(PATH);
+            } else {
+                System.out.println("Day is required for this action");
+                logger.error("Day is required for this action");
+                return null;
+            }
+
+            return new ConsultParams(serverAddress, String.valueOf(action), day, outPath);
 
         } catch (ParseException e) {
             System.out.println("Error parsing command line arguments");

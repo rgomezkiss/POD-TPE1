@@ -6,19 +6,14 @@ import ar.edu.itba.pod.client.utils.ServerAddress;
 import java.util.UUID;
 
 public class ConsultParams extends AbstractParams {
-    private final String ride;
-    private final UUID visitorId;
+    private final String outPath;
 
-    public ConsultParams(ServerAddress serverAddress, String action, Integer day, String ride, UUID visitorID) {
+    public ConsultParams(ServerAddress serverAddress, String action, Integer day, String outPath) {
         super(serverAddress, action, day);
-        this.ride = ride;
-        this.visitorId = visitorID;
+        this.outPath = outPath;
     }
 
-    public String getRide() {
-        return ride;
-    }
-    public UUID getVisitorId() {
-        return visitorId;
+    public String getOutPath() {
+        return outPath;
     }
 }
