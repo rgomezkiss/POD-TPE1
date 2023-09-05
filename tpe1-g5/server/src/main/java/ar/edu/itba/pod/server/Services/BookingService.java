@@ -18,7 +18,7 @@ public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
 
     @Override
     public void getAttractions(GetAttractionsRequest request, StreamObserver<GetAttractionsResponse> responseObserver) {
-        List<ServerAttraction> attractionList = new ArrayList<>(parkData.getAttractions().keySet());
+        List<ServerAttraction> attractionList = new ArrayList<>(parkData.getAttractions().values());
 
         GetAttractionsResponse response = GetAttractionsResponse.newBuilder().
                 addAllAttractions(attractionList.stream()
@@ -40,14 +40,30 @@ public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
 
     @Override
     public void book(BookRequest request, StreamObserver<BookResponse> responseObserver) {
+        // Ver que devolver...
+        boolean toRet = parkData.book(request);
+
+        BookResponse response = BookResponse.newBuilder().build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void confirmBooking(BookRequest request, StreamObserver<BookResponse> responseObserver) {
+        boolean toRet = parkData.confirmBooking(request);
+
+        BookResponse response = BookResponse.newBuilder().build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void cancelBooking(BookRequest request, StreamObserver<BookResponse> responseObserver) {
+        boolean toRet = parkData.cancelBooking(request);
+
+        BookResponse response = BookResponse.newBuilder().build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
     public ParkData getParkData() {

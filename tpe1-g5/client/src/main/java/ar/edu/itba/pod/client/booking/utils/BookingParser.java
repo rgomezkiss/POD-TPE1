@@ -93,13 +93,13 @@ public class BookingParser {
                         slotTo = cmd.getOptionValue(SLOT_TO);
                     }
 
-                    return new BookingParams(serverAddress, String.valueOf(action), day, ride, slot, slotTo);
+                    return new BookingParams(serverAddress, String.valueOf(action), day, ride, slot, slotTo, null);
                 }
                 case BOOK, CONFIRM, CANCEL -> {
                     final int day;
                     final String slot;
                     final String ride;
-                    final UUID visitorId;
+                    final String visitorId;
 
                     if (cmd.hasOption(DAY)) {
                         day = Integer.parseInt(cmd.getOptionValue(DAY));
@@ -131,7 +131,7 @@ public class BookingParser {
                     }
 
                     if (cmd.hasOption(VISITOR)) {
-                        visitorId = UUID.fromString(cmd.getOptionValue(VISITOR));
+                        visitorId = cmd.getOptionValue(VISITOR);
                     } else {
                         System.out.println("Visitor ID is required for this action");
                         logger.error("Visitor ID is required for this action");

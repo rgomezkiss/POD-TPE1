@@ -17,6 +17,5 @@ public class AttractionsAction implements Action {
         GetAttractionsResponse attractionsResponse = blockingStub.getAttractions(GetAttractionsRequest.newBuilder().build());
 
         attractionsResponse.getAttractionsList().forEach((attractionResponse) -> System.out.println(attractionResponse.getAttractionName() + attractionResponse.getOpeningTime() + attractionResponse.getClosingTime()));
-
     }
 }
