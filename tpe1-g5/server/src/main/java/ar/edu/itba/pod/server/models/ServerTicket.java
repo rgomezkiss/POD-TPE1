@@ -1,5 +1,6 @@
 package ar.edu.itba.pod.server.models;
 
+import ar.edu.itba.pod.grpc.park_admin.AddTicketRequest;
 import ar.edu.itba.pod.grpc.park_admin.TicketType;
 
 import java.time.LocalTime;
@@ -15,6 +16,13 @@ public class ServerTicket {
         this.userId = userId;
         this.day = day;
         this.ticketType = ticketType;
+        this.bookings = 0;
+    }
+
+    public ServerTicket(AddTicketRequest ticket) {
+        this.userId = UUID.fromString(ticket.getUUID());
+        this.day = ticket.getTicketDay();
+        this.ticketType = ticket.getTicketType();
         this.bookings = 0;
     }
 
@@ -35,5 +43,14 @@ public class ServerTicket {
         this.bookings = bookings;
     }
 
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public int getDay() {
+        return day;
+    }
+
     // TODO: implementar hash e equals
 }
+

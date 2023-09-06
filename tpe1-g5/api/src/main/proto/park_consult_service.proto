@@ -12,17 +12,23 @@ service ParkConsultService {
 }
 
 message GetSuggestedCapacityRequest {
-  string message = 1;
+  string day = 1;
 }
 
 //...
 message GetSuggestedCapacityResponse {
-  string message = 1;
+  repeated SuggestedCapacity suggestedCapacities = 1;
+}
+
+message SuggestedCapacity {
+  string attractionName = 1;
+  int32 suggestedCapacity = 2;
+  string maxCapSlot = 3;
 }
 
 //List<Bookings>
 message GetBookingsRequest {
-  string message = 1;
+  string day = 1;
 }
 
 //

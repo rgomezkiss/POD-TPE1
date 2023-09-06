@@ -8,7 +8,7 @@ option java_multiple_files = true;
 
 service ParkAdminService {
   rpc AddAttraction(AddAttractionRequest) returns (BooleanResponse);
-  rpc AddTicket(Ticket) returns (BooleanResponse);
+  rpc AddTicket(AddTicketRequest) returns (BooleanResponse);
   rpc AddSlot(AddSlotRequest) returns (GenericMessageResponse);
 }
 
@@ -27,7 +27,7 @@ message GenericMessageResponse {
   string message = 1;
 }
 
-message Ticket {
+message AddTicketRequest {
   string UUID = 1;
   TicketType ticketType = 2;
   int32 ticketDay = 3;

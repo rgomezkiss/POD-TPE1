@@ -3,6 +3,7 @@ package ar.edu.itba.pod.server.Services;
 import ar.edu.itba.pod.grpc.booking.*;
 import ar.edu.itba.pod.server.ParkData;
 import ar.edu.itba.pod.server.models.ServerAttraction;
+import ar.edu.itba.pod.server.models.ServerBooking;
 import io.grpc.stub.StreamObserver;
 
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
     @Override
     public void book(BookRequest request, StreamObserver<BookResponse> responseObserver) {
         // Ver que devolver...
-        boolean toRet = parkData.book(request);
+        boolean toRet = parkData.book(new ServerBooking(request));
 
         BookResponse response = BookResponse.newBuilder().build();
         responseObserver.onNext(response);
@@ -50,7 +51,7 @@ public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
 
     @Override
     public void confirmBooking(BookRequest request, StreamObserver<BookResponse> responseObserver) {
-        boolean toRet = parkData.confirmBooking(request);
+        boolean toRet = parkData.confirmBooking(new ServerBooking(request));
 
         BookResponse response = BookResponse.newBuilder().build();
         responseObserver.onNext(response);
@@ -59,7 +60,7 @@ public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
 
     @Override
     public void cancelBooking(BookRequest request, StreamObserver<BookResponse> responseObserver) {
-        boolean toRet = parkData.cancelBooking(request);
+        boolean toRet = parkData.cancelBooking(new ServerBooking(request));
 
         BookResponse response = BookResponse.newBuilder().build();
         responseObserver.onNext(response);

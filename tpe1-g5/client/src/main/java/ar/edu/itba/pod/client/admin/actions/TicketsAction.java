@@ -20,12 +20,12 @@ public class TicketsAction implements Action {
         ParkAdminServiceGrpc.ParkAdminServiceBlockingStub blockingStub = ParkAdminServiceGrpc.newBlockingStub(channel);
 
         // Crear "dto" u objeto a enviar al server
-        List<Ticket> toAddTickets = parseFile(adminParams.getInputPath());
+        List<AddTicketRequest> toAddTickets = parseFile(adminParams.getInputPath());
 
         int added = 0;
         int notAdded = 0;
 
-        for (Ticket ticket : toAddTickets) {
+        for (AddTicketRequest ticket : toAddTickets) {
             BooleanResponse booleanResponse = blockingStub.addTicket(ticket);
             if (booleanResponse.getValue()) {
                 added++;
@@ -43,13 +43,13 @@ public class TicketsAction implements Action {
         }
     }
 
-    private static List<Ticket> parseFile(String path) {
-        List<Ticket> passes = null;
+    private static List<AddTicketRequest> parseFile(String path) {
+        List<AddTicketRequest> passes = null;
         try {
             passes = Files.lines(Paths.get(path))
                     .skip(1) // Saltar la primera línea (encabezados)
                     .map(line -> line.split(";"))
-                    .map(data -> Ticket.newBuilder()
+                    .map(data -> AddTicketRequest.newBuilder()
                             .setUUID(data[0])
                             .setTicketType(TicketType.valueOf(data[1]))
                             .setTicketDay(Integer.parseInt(data[2]))
