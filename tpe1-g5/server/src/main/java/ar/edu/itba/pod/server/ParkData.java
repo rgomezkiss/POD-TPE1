@@ -1,5 +1,6 @@
 package ar.edu.itba.pod.server;
 
+import ar.edu.itba.pod.grpc.park_admin.AddSlotRequest;
 import ar.edu.itba.pod.server.models.DayCapacity;
 import ar.edu.itba.pod.server.models.ServerAttraction;
 import ar.edu.itba.pod.server.models.ServerBooking;
@@ -38,7 +39,9 @@ public class ParkData {
         // slotSize negative,
         // slotSize not enough.
         // Recién ahí devolver
-        return attractions.put(attraction.getAttractionName(), attraction) == null;
+        attractions.put(attraction.getAttractionName(), attraction);
+        bookings.put(attraction, new ConcurrentHashMap<>());
+        return true;
     }
 
     public boolean addTicket(ServerTicket ticket) {
@@ -56,6 +59,17 @@ public class ParkData {
         return tickets.get(ticket.getUserId()).put(ticket.getDay(), ticket) == null;
     }
 
+    public void addSlot(AddSlotRequest request) {
+        ServerAttraction attraction = attractions.get(request.getAttractionName());
+
+        if (attraction == null){
+            return;
+        }
+
+        // get en el otro mapa, change capacity if null
+
+
+    }
 
     /** BookingService methods **/
     public boolean book(ServerBooking booking) {
@@ -70,7 +84,7 @@ public class ParkData {
         }
 
         // Agrego atracción si no estuviera
-        bookings.putIfAbsent(attraction, new ConcurrentHashMap<>());
+        // bookings.putIfAbsent(attraction, new ConcurrentHashMap<>());
 
         DayCapacity dayCapacityAux = new DayCapacity(booking.getDay());
 

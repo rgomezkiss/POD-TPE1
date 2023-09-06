@@ -12,10 +12,9 @@ service ParkConsultService {
 }
 
 message GetSuggestedCapacityRequest {
-  string day = 1;
+  int32 day = 1;
 }
 
-//...
 message GetSuggestedCapacityResponse {
   repeated SuggestedCapacity suggestedCapacities = 1;
 }
@@ -26,12 +25,11 @@ message SuggestedCapacity {
   string maxCapSlot = 3;
 }
 
-//List<Bookings>
 message GetBookingsRequest {
-  string day = 1;
+  int32 day = 1;
 }
 
-//
+//List<Bookings>
 message GetBookingsResponse {
   string message = 1;
 }

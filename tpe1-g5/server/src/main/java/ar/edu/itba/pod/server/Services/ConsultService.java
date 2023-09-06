@@ -13,9 +13,13 @@ public class ConsultService extends ParkConsultServiceGrpc.ParkConsultServiceImp
 
     @Override
     public void getSuggestedCapacity(GetSuggestedCapacityRequest request, StreamObserver<GetSuggestedCapacityResponse> responseObserver) {
+        parkData.getSuggestedCapacity(request.getDay());
+
+        responseObserver.onCompleted();;
     }
 
     @Override
     public void getBookings(GetBookingsRequest request, StreamObserver<GetBookingsResponse> responseObserver) {
+        // Método listo, falta convertir al otro tipo de dato
     }
 }

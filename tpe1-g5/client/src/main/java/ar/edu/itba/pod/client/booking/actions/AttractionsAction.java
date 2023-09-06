@@ -7,8 +7,6 @@ import ar.edu.itba.pod.grpc.booking.GetAttractionsRequest;
 import ar.edu.itba.pod.grpc.booking.GetAttractionsResponse;
 import io.grpc.ManagedChannel;
 
-import java.util.List;
-
 public class AttractionsAction implements Action {
     @Override
     public void execute(AbstractParams params, ManagedChannel channel) {

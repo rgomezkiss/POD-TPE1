@@ -29,6 +29,6 @@ public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplB
 
     @Override
     public void addSlot(AddSlotRequest request, StreamObserver<GenericMessageResponse> responseObserver) {
-
+        //
     }
 }
