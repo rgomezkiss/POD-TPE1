@@ -16,15 +16,9 @@ public class ServerBooking {
     private boolean isConfirmed;
 
     // TODO: Horario de confirmación de la reserva... u horario de cuando se haya realizado
+    private final LocalTime bookingTime;
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 
-    public ServerBooking(String attractionName, int day, LocalTime slot, UUID userId, boolean isConfirmed) {
-        this.attractionName = attractionName;
-        this.day = day;
-        this.slot = slot;
-        this.userId = userId;
-        this.isConfirmed = isConfirmed;
-    }
 
     public ServerBooking(BookRequest bookRequest) {
         this.attractionName = bookRequest.getAttractionName();
@@ -32,6 +26,7 @@ public class ServerBooking {
         this.slot = LocalTime.parse(bookRequest.getTimeSlot(), formatter);
         this.userId = UUID.fromString(bookRequest.getUUID());
         this.isConfirmed = false;
+        this.bookingTime = LocalTime.now();
     }
 
     public LocalTime getSlot() {
@@ -60,6 +55,10 @@ public class ServerBooking {
 
     public UUID getUserId() {
         return userId;
+    }
+
+    public LocalTime getBookingTime() {
+        return bookingTime;
     }
 
     @Override

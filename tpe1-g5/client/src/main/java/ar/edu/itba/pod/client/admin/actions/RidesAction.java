@@ -34,7 +34,7 @@ public class RidesAction implements Action {
                 added++;
             }
             catch (StatusRuntimeException e) {
-                System.out.println(e.getStatus() + e.getMessage());
+                System.out.println(e.getStatus().getCode() + e.getMessage());
                 notAdded++;
             }
         }

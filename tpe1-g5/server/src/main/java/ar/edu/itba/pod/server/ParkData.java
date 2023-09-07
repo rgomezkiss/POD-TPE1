@@ -23,7 +23,7 @@ public class ParkData {
     //AttractionName -> ServerAttraction
     private final Map<String, ServerAttraction> attractions = new ConcurrentHashMap<>();
 
-    //UserId -> Day -> Ticket. TODO: que la clase Ticket tenga la cantidad que hizo en el dia para validar
+    //UserId -> Day -> Ticket
     private final Map<UUID, Map<Integer, ServerTicket>> tickets = new ConcurrentHashMap<>();
 
     public Map<String, ServerAttraction> getAttractions() {
@@ -74,8 +74,73 @@ public class ParkData {
             return;
         }
 
-        // get en el otro mapa, change capacity if null
+        DayCapacity dayCapacity = getDayCapacity(attraction, request.getDay());
+
+        if (dayCapacity.getCapacity() == null) {
+            // Ya agregamos la capacidad
+            return;
+        }
+
+        dayCapacity.setCapacity(request.getCapacity());
+
+        reorganizeBookings(attraction, dayCapacity);
     }
+
+    private void reorganizeBookings(ServerAttraction attraction, DayCapacity capacity) {
+        Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> attractionBookings = bookings.get(attraction);
+
+        if (attractionBookings == null) {
+            return;
+        }
+
+        Map<LocalTime, List<ServerBooking>> capacityBookings = attractionBookings.get(capacity);
+        if (capacityBookings == null) {
+            return;
+        }
+
+        List<ServerBooking> toMove = new ArrayList<>();
+
+        // Recorremos las reservas y los horarios disponibles
+        for (Map.Entry<LocalTime, List<ServerBooking>> entry : capacityBookings.entrySet()) {
+            List<ServerBooking> reservations = entry.getValue();
+
+            // Confirmamos todas las que se puedan
+            for (int i = 0; i < capacity.getCapacity(); i++){
+                reservations.get(i).setConfirmed(true);
+                //TODO: notificar que se confirmo o cargo cap
+            }
+
+            // Agregamos las excedentes a la lista de reservas a mover
+            for (int i = capacity.getCapacity(); i < reservations.size(); i++) {
+                //Cambiar por una queue para que se haga en una sola operación
+                toMove.add(reservations.get(i));
+                //reservations.remove(reservations.get(i));
+            }
+            reservations.subList(capacity.getCapacity(), reservations.size()).clear();
+        }
+
+        // Reasignamos las reservas excedentes
+        for (ServerBooking booking : toMove) {
+            LocalTime nextAvailableTime = getNextAvailableTime(capacityBookings, booking.getSlot(), attraction, capacity.getCapacity());
+
+            if (nextAvailableTime == null) {
+                // Iterar sobre las que sobren y eliminar y avisar...
+                return;
+            }
+
+            capacityBookings.putIfAbsent(nextAvailableTime, new ArrayList<>());
+            capacityBookings.get(nextAvailableTime).add(booking);
+        }
+    }
+
+    private LocalTime getNextAvailableTime(Map<LocalTime, List<ServerBooking>> capacityBookings, LocalTime bookingTime, ServerAttraction attraction, Integer capacity) {
+        LocalTime nextTime = bookingTime.plusMinutes(attraction.getSlotSize());
+        while (capacityBookings.getOrDefault(nextTime, new ArrayList<>()).size() >= capacity && nextTime.isBefore(attraction.getClosingTime())) {
+            nextTime = nextTime.plusMinutes(attraction.getSlotSize());
+        }
+        return nextTime.isBefore(attraction.getClosingTime()) ? nextTime : null;
+    }
+
 
     /**
      * BookingService methods
@@ -159,7 +224,11 @@ public class ParkData {
             return false;
         }
 
-        DayCapacity dayCapacityAux = new DayCapacity(booking.getDay());
+        DayCapacity dayCapacityAux = getDayCapacity(attraction, booking.getDay());
+
+        if (dayCapacityAux.getCapacity() == null){
+            return false;
+        }
 
         Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> dayMap = bookings.get(attraction);
 
