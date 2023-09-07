@@ -1,5 +1,6 @@
 package ar.edu.itba.pod.server.interceptor;
 
+import ar.edu.itba.pod.server.exceptions.AttractionAlreadyExistsException;
 import com.google.rpc.Code;
 import io.grpc.*;
 import io.grpc.protobuf.StatusProto;
@@ -37,7 +38,7 @@ public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
         }
 
         private final Map<Class<? extends Throwable>, Code> errorCodesByException = Map.of(
-
+                AttractionAlreadyExistsException.class, Code.ALREADY_EXISTS
         );
 
         private void handleException(RuntimeException exception, ServerCall<T, R> serverCall, Metadata headers) {

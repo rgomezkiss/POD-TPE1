@@ -38,7 +38,15 @@ message GetAvailabilityRequest {
 
 // List<...>
 message GetAvailabilityResponse {
-  string message = 1;
+  repeated AvailabilityResponse availabilityResponses = 1;
+}
+
+message AvailabilityResponse {
+  string slot = 1;
+  int32 capacity = 2;
+  int32 pending = 3;
+  int32 confirmed = 4;
+  string attractionName = 5;
 }
 
 message BookRequest {

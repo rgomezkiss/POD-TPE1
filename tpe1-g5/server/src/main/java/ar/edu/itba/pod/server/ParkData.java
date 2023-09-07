@@ -1,7 +1,10 @@
 package ar.edu.itba.pod.server;
 
+import ar.edu.itba.pod.grpc.booking.AvailabilityResponse;
+import ar.edu.itba.pod.grpc.booking.GetAvailabilityResponse;
 import ar.edu.itba.pod.grpc.park_admin.AddSlotRequest;
 import ar.edu.itba.pod.grpc.park_consult.SuggestedCapacity;
+import ar.edu.itba.pod.server.exceptions.AttractionAlreadyExistsException;
 import ar.edu.itba.pod.server.models.DayCapacity;
 import ar.edu.itba.pod.server.models.ServerAttraction;
 import ar.edu.itba.pod.server.models.ServerBooking;
@@ -10,6 +13,7 @@ import ar.edu.itba.pod.server.models.ServerTicket;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ParkData {
     // Attraction -> Day/Capacity -> TimeSlot -> List<Book>
@@ -37,10 +41,14 @@ public class ParkData {
         // slotSize not enough.
         // Recién ahí devolver
 
-        attractions.put(attraction.getAttractionName(), attraction);
-
+        if (!attractions.containsKey(attraction.getAttractionName())) {
+            attractions.put(attraction.getAttractionName(), attraction);
+            bookings.put(attraction, new ConcurrentHashMap<>());
+        }
+        else {
+            throw new AttractionAlreadyExistsException();
+        }
         // También agrego en bookings
-        bookings.put(attraction, new ConcurrentHashMap<>());
         return true;
     }
 
@@ -114,6 +122,34 @@ public class ParkData {
         }
 
         return false;
+    }
+
+    public AvailabilityResponse getAvailability(String attractionName, int day, LocalTime slot){
+        ServerAttraction attraction = attractions.get(attractionName);
+
+        DayCapacity dayCapacity = getDayCapacity(attraction, day);
+
+        AtomicInteger confirmed = new AtomicInteger(0);
+        AtomicInteger pending = new AtomicInteger(0);
+
+
+        bookings.get(attraction).get(dayCapacity).get(slot)
+                .forEach(booking -> {
+                    if (booking.isConfirmed()) {
+                        confirmed.getAndIncrement();
+                    }
+                    else {
+                        pending.getAndIncrement();
+                    }
+                });
+
+        return AvailabilityResponse.newBuilder()
+                .setAttractionName(attractionName)
+                .setConfirmed(confirmed.get())
+                .setPending(pending.get())
+                .setCapacity(dayCapacity.getCapacity())
+                .setSlot(slot.toString())
+                .build();
     }
 
     public boolean confirmBooking(ServerBooking booking) {

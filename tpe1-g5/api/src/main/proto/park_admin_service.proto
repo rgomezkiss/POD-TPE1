@@ -5,9 +5,10 @@ package park_admin;
 option java_package = "ar.edu.itba.pod.grpc.park_admin";
 option java_multiple_files = true;
 
+import "google/protobuf/empty.proto";
 
 service ParkAdminService {
-  rpc AddAttraction(AddAttractionRequest) returns (BooleanResponse);
+  rpc AddAttraction(AddAttractionRequest) returns (google.protobuf.Empty);
   rpc AddTicket(AddTicketRequest) returns (BooleanResponse);
   rpc AddSlot(AddSlotRequest) returns (GenericMessageResponse);
 }

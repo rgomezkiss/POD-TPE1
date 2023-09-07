@@ -1,9 +1,11 @@
 package ar.edu.itba.pod.server;
 
+import ar.edu.itba.pod.server.interceptor.GlobalExceptionHandlerInterceptor;
 import ar.edu.itba.pod.server.services.BookingService;
 import ar.edu.itba.pod.server.services.ConsultService;
 import ar.edu.itba.pod.server.services.ParkAdminService;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerInterceptors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +21,7 @@ public class Server {
         ParkData parkData = new ParkData();
 
         io.grpc.Server server = ServerBuilder.forPort(port)
-                .addService(new ParkAdminService(parkData))
+                .addService(ServerInterceptors.intercept(new ParkAdminService(parkData), new GlobalExceptionHandlerInterceptor()))
                 .addService(new ConsultService(parkData))
                 .addService(new BookingService(parkData))
                 .build();

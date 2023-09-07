@@ -4,6 +4,7 @@ import ar.edu.itba.pod.grpc.park_admin.*;
 import ar.edu.itba.pod.server.ParkData;
 import ar.edu.itba.pod.server.models.ServerAttraction;
 import ar.edu.itba.pod.server.models.ServerTicket;
+import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 
 public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplBase {
@@ -15,8 +16,10 @@ public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplB
 
     // TODO: podría no devolverse nada y manejar solo casos de error
     @Override
-    public void addAttraction(AddAttractionRequest attraction, StreamObserver<BooleanResponse> responseObserver) {
-        BooleanResponse response = BooleanResponse.newBuilder().setValue(parkData.addAttraction(new ServerAttraction(attraction))).build();
+    public void addAttraction(AddAttractionRequest attraction, StreamObserver<com.google.protobuf.Empty> responseObserver) {
+        parkData.addAttraction(new ServerAttraction(attraction));
+
+        Empty response = Empty.newBuilder().build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }

@@ -7,6 +7,7 @@ import ar.edu.itba.pod.grpc.park_admin.AddAttractionRequest;
 import ar.edu.itba.pod.grpc.park_admin.BooleanResponse;
 import ar.edu.itba.pod.grpc.park_admin.ParkAdminServiceGrpc;
 import io.grpc.ManagedChannel;
+import io.grpc.StatusRuntimeException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,10 +29,12 @@ public class RidesAction implements Action {
         int notAdded = 0;
 
         for (AddAttractionRequest attraction : toAddAttractions) {
-            BooleanResponse booleanResponse = blockingStub.addAttraction(attraction);
-            if (booleanResponse.getValue()) {
+            try {
+                blockingStub.addAttraction(attraction);
                 added++;
-            } else {
+            }
+            catch (StatusRuntimeException e) {
+                System.out.println(e.getStatus() + e.getMessage());
                 notAdded++;
             }
         }
