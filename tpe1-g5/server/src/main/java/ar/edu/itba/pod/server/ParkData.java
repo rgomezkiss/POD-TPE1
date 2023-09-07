@@ -1,17 +1,14 @@
 package ar.edu.itba.pod.server;
 
 import ar.edu.itba.pod.grpc.park_admin.AddSlotRequest;
+import ar.edu.itba.pod.grpc.park_consult.SuggestedCapacity;
 import ar.edu.itba.pod.server.models.DayCapacity;
 import ar.edu.itba.pod.server.models.ServerAttraction;
 import ar.edu.itba.pod.server.models.ServerBooking;
 import ar.edu.itba.pod.server.models.ServerTicket;
 
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ParkData {
@@ -25,13 +22,13 @@ public class ParkData {
     //UserId -> Day -> Ticket. TODO: que la clase Ticket tenga la cantidad que hizo en el dia para validar
     private final Map<UUID, Map<Integer, ServerTicket>> tickets = new ConcurrentHashMap<>();
 
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
-
     public Map<String, ServerAttraction> getAttractions() {
         return attractions;
     }
 
-    /** ParkAdminService methods **/
+    /**
+     * ParkAdminService methods
+     **/
     public boolean addAttraction(ServerAttraction attraction) {
         // TODO: agregar validaciones para especificar errores:
         // Duplicate name.
@@ -39,7 +36,10 @@ public class ParkData {
         // slotSize negative,
         // slotSize not enough.
         // Recién ahí devolver
+
         attractions.put(attraction.getAttractionName(), attraction);
+
+        // También agrego en bookings
         bookings.put(attraction, new ConcurrentHashMap<>());
         return true;
     }
@@ -62,16 +62,16 @@ public class ParkData {
     public void addSlot(AddSlotRequest request) {
         ServerAttraction attraction = attractions.get(request.getAttractionName());
 
-        if (attraction == null){
+        if (attraction == null) {
             return;
         }
 
         // get en el otro mapa, change capacity if null
-
-
     }
 
-    /** BookingService methods **/
+    /**
+     * BookingService methods
+     **/
     public boolean book(ServerBooking booking) {
         ServerAttraction attraction = attractions.get(booking.getAttractionName());
 
@@ -83,19 +83,37 @@ public class ParkData {
             return false;
         }
 
-        // Agrego atracción si no estuviera
-        // bookings.putIfAbsent(attraction, new ConcurrentHashMap<>());
+        ServerTicket ticket = tickets.getOrDefault(booking.getUserId(), new HashMap<>()).getOrDefault(booking.getDay(), null);
 
-        DayCapacity dayCapacityAux = new DayCapacity(booking.getDay());
+        // Si el usuario tiene un ticket asociado al día, y puede reservar en ese momento
+        if (ticket != null && ticket.canBook(booking.getSlot())) {
+            // Guardo el día y su capacity asociada. Si no estuviera se devuelve un nuevo dayCapacity con capacity == null
+            DayCapacity dayCapacity = getDayCapacity(attraction, booking.getDay());
 
-        // Agrego día del año si no estuviera. Debería agregar la capacidad (tal vez en una clase Pair<K,V>, donde la K uso en hash)
-        bookings.get(attraction).putIfAbsent(dayCapacityAux, new ConcurrentHashMap<>());
+            // Agrego día del año si no estuviera. Se agrega con capacity == null
+            bookings.get(attraction).putIfAbsent(dayCapacity, new ConcurrentHashMap<>());
 
-        // Agrego hora del año sabiendo que es válida
-        bookings.get(attraction).get(dayCapacityAux).putIfAbsent(booking.getSlot(), new ArrayList<>());
+            // Agrego hora del año sabiendo que es válida
+            List<ServerBooking> serverBookingList = bookings.get(attraction).get(dayCapacity).putIfAbsent(booking.getSlot(), new ArrayList<>());
 
-        // Agrego finalmente la reserva. Incrementar la cantidad de bookings del usuario en ese día
-        return bookings.get(attraction).get(dayCapacityAux).get(booking.getSlot()).add(booking);
+            // Si la capacidad ya esta cargada, entonces agrego y confirmo si hay lugar, modificando el confirmed
+            if (dayCapacity.getCapacity() != null) {
+                if (serverBookingList.size() < dayCapacity.getCapacity()) {
+                    bookings.get(attraction).get(dayCapacity).get(booking.getSlot()).add(booking);
+                    booking.setConfirmed(true);
+                    ticket.book();
+                }
+                return false;
+            }
+            // Sino, agrego sin modificar el confirmed
+            else {
+                bookings.get(attraction).get(dayCapacity).get(booking.getSlot()).add(booking);
+                ticket.book();
+            }
+            return true;
+        }
+
+        return false;
     }
 
     public boolean confirmBooking(ServerBooking booking) {
@@ -119,8 +137,11 @@ public class ParkData {
             return false;
         }
 
-        if (bookings.get(attraction).get(dayCapacityAux).getOrDefault(booking.getSlot(), new ArrayList<>()).contains(booking)) {
+        Optional<ServerBooking> toConfirmBook = bookings.get(attraction).get(dayCapacityAux).getOrDefault(booking.getSlot(), new ArrayList<>()).stream().filter(toFind -> toFind.equals(booking)).findFirst();
+
+        if (toConfirmBook.isPresent()) {
             // Confirmo la reserva
+            toConfirmBook.get().setConfirmed(true);
             return true;
         }
 
@@ -149,20 +170,64 @@ public class ParkData {
             return false;
         }
 
+        ServerTicket ticket = tickets.getOrDefault(booking.getUserId(), new HashMap<>()).getOrDefault(booking.getDay(), null);
+
         // Elimino la reserva si existía, y sino ya vuelvo
-        return bookings.get(attraction).get(dayCapacityAux).getOrDefault(booking.getSlot(), new ArrayList<>()).remove(booking);
+        if (bookings.get(attraction).get(dayCapacityAux).getOrDefault(booking.getSlot(), new ArrayList<>()).remove(booking)) {
+            ticket.cancelBook();
+            return true;
+        }
+        return false;
+    }
+
+    // Función que devuelve la clave dayCapacity asociada a una atracción en cierto día
+    private DayCapacity getDayCapacity(ServerAttraction attraction, int day) {
+        DayCapacity dayCapacityAux = new DayCapacity(day);
+
+        return bookings.get(attraction).keySet().stream()
+                .filter(dayCapacityMap -> dayCapacityMap.equals(dayCapacityAux))
+                .findFirst().orElse(dayCapacityAux);
     }
 
 
-    /** ConsultService methods **/
-    public List<ServerAttraction> getSuggestedCapacity(int day) {
-        return null;
+    /**
+     * ConsultService methods
+     **/
+    public List<SuggestedCapacity> getSuggestedCapacity(int day) {
+        List<SuggestedCapacity> suggestedCapacities = new ArrayList<>();
+
+        for (Map.Entry<ServerAttraction, Map<DayCapacity, Map<LocalTime, List<ServerBooking>>>> attractionEntry : bookings.entrySet()) {
+            ServerAttraction attraction = attractionEntry.getKey();
+
+            if (getDayCapacity(attraction, day).getCapacity() == null) {
+                SuggestedCapacity aux = singleSuggestedCapacity(attraction, day);
+                if (aux != null) {
+                    suggestedCapacities.add(aux);
+                }
+            }
+
+        }
+
+        return suggestedCapacities;
     }
+
+    private SuggestedCapacity singleSuggestedCapacity(ServerAttraction attraction, int day) {
+        DayCapacity dayCapacity = new DayCapacity(day);
+
+        return Optional.ofNullable(bookings.get(attraction))
+                .map(reservationsByAttraction -> reservationsByAttraction.get(dayCapacity))
+                .map(reservationsByDay -> reservationsByDay.entrySet().stream()
+                        .max(Comparator.comparingInt(entry -> entry.getValue().size()))
+                        .map(entry -> SuggestedCapacity.newBuilder()
+                                .setAttractionName(attraction.getAttractionName())
+                                .setSuggestedCapacity(entry.getValue().size())
+                                .setMaxCapSlot(entry.getKey().toString())
+                                .build()).orElse(null)).orElse(null);
+        }
 
     public List<ServerBooking> getBookings(int day) {
         List<ServerBooking> bookingsByDay = new ArrayList<>();
         DayCapacity dayCapacity = new DayCapacity(day);
-
 
         for (Map.Entry<ServerAttraction, Map<DayCapacity, Map<LocalTime, List<ServerBooking>>>> attractionEntry : bookings.entrySet()) {
             Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> reservationsByDay = attractionEntry.getValue();

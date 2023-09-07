@@ -31,5 +31,11 @@ message GetBookingsRequest {
 
 //List<Bookings>
 message GetBookingsResponse {
-  string message = 1;
+  repeated BookingResponse bookings = 1;
+}
+
+message BookingResponse {
+  string attractionName = 1;
+  string timeSlot = 2;
+  string UUID = 3;
 }

@@ -38,7 +38,8 @@ public class ServerTicket {
     public int getBookings() {
         return bookings;
     }
-    public void addBookings() { this.bookings++; }
+    public void book() { this.bookings++; }
+    public void cancelBook() { this.bookings--; }
     public void setBookings(int bookings) {
         this.bookings = bookings;
     }

@@ -1,4 +1,4 @@
-package ar.edu.itba.pod.server.Services;
+package ar.edu.itba.pod.server.services;
 
 import ar.edu.itba.pod.grpc.park_admin.*;
 import ar.edu.itba.pod.server.ParkData;
@@ -13,6 +13,7 @@ public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplB
         this.parkData = parkData;
     }
 
+    // TODO: podría no devolverse nada y manejar solo casos de error
     @Override
     public void addAttraction(AddAttractionRequest attraction, StreamObserver<BooleanResponse> responseObserver) {
         BooleanResponse response = BooleanResponse.newBuilder().setValue(parkData.addAttraction(new ServerAttraction(attraction))).build();

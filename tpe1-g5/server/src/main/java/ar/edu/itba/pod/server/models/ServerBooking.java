@@ -4,15 +4,14 @@ import ar.edu.itba.pod.grpc.booking.BookRequest;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.UUID;
 
 public class ServerBooking {
-    // Estos 3 campos como dependen del mapa podrían no estar
     private final String attractionName;
     private final int day;
     private LocalTime slot;
 
-    // Esto hace falta
     private final UUID userId;
     private boolean isConfirmed;
 
@@ -59,5 +58,24 @@ public class ServerBooking {
         return day;
     }
 
-    // TODO: implementar hash e equals dependiendo si puedo o no repetir reservas
+    public UUID getUserId() {
+        return userId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ServerBooking other = (ServerBooking) o;
+        return this.attractionName.equals(other.attractionName) && this.day == other.day && this.slot.equals(other.slot) && this.userId.equals(other.userId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(attractionName, day, slot, userId);
+    }
 }
