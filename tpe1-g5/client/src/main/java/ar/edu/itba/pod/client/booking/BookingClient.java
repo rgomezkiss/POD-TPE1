@@ -13,8 +13,7 @@ public class BookingClient {
     private final static Logger logger = LoggerFactory.getLogger(BookingClient.class);
 
     public static void main(String[] args) throws InterruptedException {
-        logger.info("tpe1-g5 Booking Client Starting ...");
-        logger.info("grpc-com-patterns Booking Client Starting ...");
+        logger.info("Booking Client Starting ...");
 
         AbstractParams params = new BookingParser().parse(args);
 

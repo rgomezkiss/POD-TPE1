@@ -16,8 +16,7 @@ public class ConsultClient {
     private final static Logger logger = LoggerFactory.getLogger(ConsultClient.class);
 
     public static void main(String[] args) throws InterruptedException {
-        logger.info("tpe1-g5 Consult Client Starting ...");
-        logger.info("grpc-com-patterns Consult Client Starting ...");
+        logger.info("Consult Client Starting ...");
 
         AbstractParams params = new ConsultParser().parse(args);
 

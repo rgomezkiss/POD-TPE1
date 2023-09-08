@@ -15,8 +15,10 @@ public class CapacityAction implements Action {
 
         ParkConsultServiceGrpc.ParkConsultServiceBlockingStub blockingStub = ParkConsultServiceGrpc.newBlockingStub(channel);
 
-        GetSuggestedCapacityResponse capacityResponse = blockingStub.getSuggestedCapacity(GetSuggestedCapacityRequest.newBuilder().setDay(consultParams.getDay()).build());
+        GetSuggestedCapacityResponse capacityResponse = blockingStub.
+                getSuggestedCapacity(GetSuggestedCapacityRequest.newBuilder().setDay(consultParams.getDay()).build());
 
         // Imprimir con formato que corresponde en out.txt
+        //TODO
     }
 }

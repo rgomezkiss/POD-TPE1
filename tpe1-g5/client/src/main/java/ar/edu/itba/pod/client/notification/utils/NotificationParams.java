@@ -16,7 +16,6 @@ public class NotificationParams extends AbstractParams {
     public String getRideName() {
         return rideName;
     }
-
     public String getVisitorId() {
         return visitorId;
     }

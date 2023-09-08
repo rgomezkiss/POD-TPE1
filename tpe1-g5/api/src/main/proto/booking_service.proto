@@ -36,7 +36,7 @@ message GetAvailabilityRequest {
   string timeRangeEnd = 4;
 }
 
-// List<...>
+// List<AvailabilityResponse>
 message GetAvailabilityResponse {
   repeated AvailabilityResponse availabilityResponses = 1;
 }

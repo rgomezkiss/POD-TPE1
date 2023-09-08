@@ -7,18 +7,17 @@ import io.grpc.protobuf.StatusProto;
 
 import java.util.Map;
 
-
 public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
 
     @Override
     public <T, R> ServerCall.Listener<T> interceptCall(
-            ServerCall<T, R> serverCall, Metadata headers, ServerCallHandler<T, R> serverCallHandler) {
+            ServerCall<T, R> serverCall, Metadata headers, ServerCallHandler<T, R> serverCallHandler
+    ) {
         ServerCall.Listener<T> delegate = serverCallHandler.startCall(serverCall, headers);
         return new ExceptionHandler<>(delegate, serverCall, headers);
     }
 
     private static class ExceptionHandler<T, R> extends ForwardingServerCallListener.SimpleForwardingServerCallListener<T> {
-
         private final ServerCall<T, R> delegate;
         private final Metadata headers;
 

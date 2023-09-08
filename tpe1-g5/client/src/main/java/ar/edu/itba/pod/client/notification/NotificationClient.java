@@ -16,8 +16,7 @@ public class NotificationClient {
     private final static Logger logger = LoggerFactory.getLogger(NotificationClient.class);
 
     public static void main(String[] args) throws InterruptedException {
-        logger.info("tpe1-g5 Notification Client Starting ...");
-        logger.info("grpc-com-patterns Notification Client Starting ...");
+        logger.info("Notification Client Starting ...");
 
         AbstractParams params = new NotificationParser().parse(args);
 

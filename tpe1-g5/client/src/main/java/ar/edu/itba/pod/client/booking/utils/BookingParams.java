@@ -3,9 +3,6 @@ package ar.edu.itba.pod.client.booking.utils;
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.ServerAddress;
 
-import java.awt.print.Book;
-import java.util.UUID;
-
 public class BookingParams extends AbstractParams {
     private final String ride;
     private final String slot;

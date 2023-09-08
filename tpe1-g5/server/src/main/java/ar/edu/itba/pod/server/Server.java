@@ -20,7 +20,8 @@ public class Server {
 
         ParkData parkData = new ParkData();
 
-        io.grpc.Server server = ServerBuilder.forPort(port)
+        io.grpc.Server server = ServerBuilder
+                .forPort(port)
                 .addService(ServerInterceptors.intercept(new ParkAdminService(parkData), new GlobalExceptionHandlerInterceptor()))
                 .addService(new ConsultService(parkData))
                 .addService(new BookingService(parkData))
@@ -29,6 +30,7 @@ public class Server {
         server.start();
         logger.info("Server started, listening on " + port);
         server.awaitTermination();
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("Shutting down gRPC server since JVM is shutting down");
             server.shutdown();

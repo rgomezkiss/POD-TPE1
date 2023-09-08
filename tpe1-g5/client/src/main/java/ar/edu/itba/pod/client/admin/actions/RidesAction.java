@@ -12,7 +12,6 @@ import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class RidesAction implements Action {
@@ -32,8 +31,7 @@ public class RidesAction implements Action {
             try {
                 blockingStub.addAttraction(attraction);
                 added++;
-            }
-            catch (StatusRuntimeException e) {
+            } catch (StatusRuntimeException e) {
                 System.out.println(e.getStatus().getCode() + e.getMessage());
                 notAdded++;
             }

@@ -13,8 +13,10 @@ public class ConfirmedAction implements Action {
 
         ParkConsultServiceGrpc.ParkConsultServiceBlockingStub blockingStub = ParkConsultServiceGrpc.newBlockingStub(channel);
 
-        GetBookingsResponse capacityResponse = blockingStub.getBookings(GetBookingsRequest.newBuilder().setDay(consultParams.getDay()).build());
+        GetBookingsResponse capacityResponse = blockingStub.
+                getBookings(GetBookingsRequest.newBuilder().setDay(consultParams.getDay()).build());
 
         // Imprimir con formato que corresponde en out.txt
+        //TODO
     }
 }

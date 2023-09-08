@@ -12,11 +12,8 @@ public class ServerAttraction {
     private final LocalTime openingTime;
     private final LocalTime closingTime;
     private final int slotSize;
-
     private final Set<LocalTime> timeSlots = new HashSet<>();
-
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
-
 
     public ServerAttraction(String attractionName, LocalTime openingTime, LocalTime closingTime, int slotSize) {
         this.attractionName = attractionName;
@@ -37,34 +34,24 @@ public class ServerAttraction {
     public String getAttractionName() {
         return attractionName;
     }
-
     public LocalTime getOpeningTime() {
         return openingTime;
     }
-
     public LocalTime getClosingTime() {
         return closingTime;
     }
-
     public int getSlotSize() {
         return slotSize;
     }
-
+    public boolean isTimeSlotValid(LocalTime time) {
+        return this.timeSlots.contains(time);
+    }
     private void addTimeSlots() {
         LocalTime aux = this.openingTime;
         while (aux.isBefore(this.closingTime)) {
             timeSlots.add(aux);
             aux = aux.plusMinutes(this.slotSize);
         }
-    }
-
-    public boolean isTimeSlotValid(LocalTime time) {
-        return this.timeSlots.contains(time);
-    }
-
-    @Override
-    public int hashCode() {
-        return this.attractionName.hashCode();
     }
 
     @Override
@@ -77,5 +64,10 @@ public class ServerAttraction {
         }
         ServerAttraction other = (ServerAttraction) o;
         return this.attractionName.equals(other.attractionName);
+    }
+
+    @Override
+    public int hashCode() {
+        return this.attractionName.hashCode();
     }
 }

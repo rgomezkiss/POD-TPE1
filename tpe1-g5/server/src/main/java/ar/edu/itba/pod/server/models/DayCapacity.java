@@ -13,7 +13,6 @@ public class DayCapacity {
     public Integer getCapacity() {
         return capacity;
     }
-
     public void setCapacity(Integer capacity) {
         this.capacity = capacity;
     }
