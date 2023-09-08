@@ -5,17 +5,15 @@ package booking;
 option java_package = "ar.edu.itba.pod.grpc.booking";
 option java_multiple_files = true;
 
+import "google/protobuf/empty.proto";
+
 
 service BookingService {
-  rpc GetAttractions(GetAttractionsRequest) returns (GetAttractionsResponse);
+  rpc GetAttractions(google.protobuf.Empty) returns (GetAttractionsResponse);
   rpc GetAvailability(GetAvailabilityRequest) returns (GetAvailabilityResponse);
-  rpc Book(BookRequest) returns (BookResponse);
-  rpc ConfirmBooking(BookRequest) returns (BookResponse);
-  rpc CancelBooking(BookRequest) returns (BookResponse);
-}
-
-message GetAttractionsRequest {
-  string message = 1;
+  rpc Book(BookRequest) returns (google.protobuf.Empty);
+  rpc ConfirmBooking(BookRequest) returns (google.protobuf.Empty);
+  rpc CancelBooking(BookRequest) returns (google.protobuf.Empty);
 }
 
 // List<AttractionResponse>

@@ -26,18 +26,9 @@ public class ConsultService extends ParkConsultServiceGrpc.ParkConsultServiceImp
 
     @Override
     public void getBookings(GetBookingsRequest request, StreamObserver<GetBookingsResponse> responseObserver) {
-        // Método listo, falta convertir al otro tipo de dato
-        List<ServerBooking> bookingList = parkData.getBookings(request.getDay());
+        List<BookingResponse> bookingList = parkData.getBookings(request.getDay());
 
-        GetBookingsResponse response = GetBookingsResponse.newBuilder()
-            .addAllBookings(bookingList.stream()
-                    .map(booking -> BookingResponse.newBuilder()
-                            .setAttractionName(booking.getAttractionName())
-                            .setUUID(booking.getUserId().toString())
-                            .setTimeSlot(booking.getSlot().toString())
-                            .build()
-                    )
-                    .collect(Collectors.toList())).build();
+        GetBookingsResponse response = GetBookingsResponse.newBuilder().addAllBookings(bookingList).build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();

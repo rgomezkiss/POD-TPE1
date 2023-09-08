@@ -7,21 +7,22 @@ import ar.edu.itba.pod.grpc.booking.BookRequest;
 import ar.edu.itba.pod.grpc.booking.BookResponse;
 import ar.edu.itba.pod.grpc.booking.BookingServiceGrpc;
 import io.grpc.ManagedChannel;
+import io.grpc.StatusRuntimeException;
 
 public class BookAction implements Action {
     @Override
     public void execute(AbstractParams params, ManagedChannel channel) {
         BookingParams bookingParams = (BookingParams) params;
-
         BookingServiceGrpc.BookingServiceBlockingStub blockingStub = BookingServiceGrpc.newBlockingStub(channel);
-        BookResponse bookResponse = blockingStub.book(BookRequest.newBuilder()
-                .setUUID(bookingParams.getVisitorId())
-                .setAttractionName(bookingParams.getRide())
-                .setDay(bookingParams.getDay())
-                .setTimeSlot(bookingParams.getSlot())
-                .build());
-
-        //Book response podría ya tener un message...
-        //TODO
+        try {
+            blockingStub.book(BookRequest.newBuilder()
+                    .setUUID(bookingParams.getVisitorId())
+                    .setAttractionName(bookingParams.getRide())
+                    .setDay(bookingParams.getDay())
+                    .setTimeSlot(bookingParams.getSlot())
+                    .build());
+        } catch (StatusRuntimeException e) {
+            //
+        }
     }
 }

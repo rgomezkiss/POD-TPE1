@@ -3,8 +3,8 @@ package ar.edu.itba.pod.client.booking.actions;
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.booking.BookingServiceGrpc;
-import ar.edu.itba.pod.grpc.booking.GetAttractionsRequest;
 import ar.edu.itba.pod.grpc.booking.GetAttractionsResponse;
+import com.google.protobuf.Empty;
 import io.grpc.ManagedChannel;
 
 public class AttractionsAction implements Action {
@@ -12,8 +12,9 @@ public class AttractionsAction implements Action {
     public void execute(AbstractParams params, ManagedChannel channel) {
         BookingServiceGrpc.BookingServiceBlockingStub blockingStub = BookingServiceGrpc.newBlockingStub(channel);
 
-        GetAttractionsResponse attractionsResponse = blockingStub.getAttractions(GetAttractionsRequest.newBuilder().build());
+        GetAttractionsResponse attractionsResponse = blockingStub.getAttractions(Empty.newBuilder().build());
 
+        // TODO: falta formato ...
         attractionsResponse.getAttractionsList().forEach((attractionResponse) ->
                 System.out.println(attractionResponse.getAttractionName() +
                         attractionResponse.getOpeningTime() + attractionResponse.getClosingTime())

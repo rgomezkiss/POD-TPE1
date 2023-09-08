@@ -4,6 +4,7 @@ import ar.edu.itba.pod.grpc.booking.AvailabilityResponse;
 import ar.edu.itba.pod.grpc.booking.GetAvailabilityResponse;
 import ar.edu.itba.pod.grpc.park_admin.AddSlotRequest;
 import ar.edu.itba.pod.grpc.park_admin.AddSlotResponse;
+import ar.edu.itba.pod.grpc.park_consult.BookingResponse;
 import ar.edu.itba.pod.grpc.park_consult.SuggestedCapacity;
 import ar.edu.itba.pod.server.exceptions.AttractionAlreadyExistsException;
 import ar.edu.itba.pod.server.models.DayCapacity;
@@ -18,8 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ParkData {
     // Attraction -> Day/Capacity -> TimeSlot -> List<Book>
-    // Preguntar si un mismo usuario puede reservar varias veces mismo día, mismo horario. Eso me va a cambiar el equals/hash de ServerBook...
-    // TODO: ver si la lista puede ser una cola o similar para la reorganización
     private final Map<ServerAttraction, Map<DayCapacity, Map<LocalTime, List<ServerBooking>>>> bookings = new ConcurrentHashMap<>();
     //AttractionName -> ServerAttraction
     private final Map<String, ServerAttraction> attractions = new ConcurrentHashMap<>();
@@ -75,7 +74,7 @@ public class ParkData {
 
         DayCapacity dayCapacity = getDayCapacity(attraction, request.getDay());
 
-        if (dayCapacity.getCapacity() == null) {
+        if (dayCapacity.getCapacity() != null) {
             // Ya agregamos la capacidad
             return null;
         }
@@ -318,7 +317,8 @@ public class ParkData {
         return false;
     }
 
-    // Función que devuelve la clave dayCapacity asociada a una atracción en cierto día
+    // Función que devuelve la clave dayCapacity asociada a una atracción en cierto día.
+    // Si no existe la devuelve con una nueva instancia de DayCapacity con el valor capacity en null
     private DayCapacity getDayCapacity(ServerAttraction attraction, int day) {
         DayCapacity dayCapacityAux = new DayCapacity(day);
 
@@ -334,23 +334,25 @@ public class ParkData {
     public List<SuggestedCapacity> getSuggestedCapacity(int day) {
         List<SuggestedCapacity> suggestedCapacities = new ArrayList<>();
 
-        for (Map.Entry<ServerAttraction, Map<DayCapacity, Map<LocalTime, List<ServerBooking>>>> attractionEntry : bookings.entrySet()) {
-            ServerAttraction attraction = attractionEntry.getKey();
-
+        for (ServerAttraction attraction : attractions.values()) {
             if (getDayCapacity(attraction, day).getCapacity() == null) {
                 SuggestedCapacity aux = singleSuggestedCapacity(attraction, day);
                 if (aux != null) {
                     suggestedCapacities.add(aux);
                 }
             }
-
         }
 
+        // TODO: ordenar en front según criterio que diga
         return suggestedCapacities;
     }
 
     private SuggestedCapacity singleSuggestedCapacity(ServerAttraction attraction, int day) {
-        DayCapacity dayCapacity = new DayCapacity(day);
+        DayCapacity dayCapacity = getDayCapacity(attraction, day);
+
+        if (dayCapacity != null) {
+            return null;
+        }
 
         return Optional.ofNullable(bookings.get(attraction))
                 .map(reservationsByAttraction -> reservationsByAttraction.get(dayCapacity))
@@ -361,22 +363,26 @@ public class ParkData {
                                 .setSuggestedCapacity(entry.getValue().size())
                                 .setMaxCapSlot(entry.getKey().toString())
                                 .build()).orElse(null)).orElse(null);
-        }
+    }
 
-    public List<ServerBooking> getBookings(int day) {
-        List<ServerBooking> bookingsByDay = new ArrayList<>();
+    public List<BookingResponse> getBookings(int day) {
+        List<BookingResponse> bookingsByDay = new ArrayList<>();
         DayCapacity dayCapacity = new DayCapacity(day);
 
-        for (Map.Entry<ServerAttraction, Map<DayCapacity, Map<LocalTime, List<ServerBooking>>>> attractionEntry : bookings.entrySet()) {
-            Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> reservationsByDay = attractionEntry.getValue();
-
+        for (Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> reservationsByDay : bookings.values()) {
             if (reservationsByDay.containsKey(dayCapacity)) {
                 Map<LocalTime, List<ServerBooking>> reservationsByTime = reservationsByDay.get(dayCapacity);
 
                 reservationsByTime.values().forEach(bookingsAtTime ->
                         bookingsAtTime.forEach(booking -> {
                             if (booking.isConfirmed()) {
-                                bookingsByDay.add(booking);
+                                bookingsByDay.add(
+                                    BookingResponse.newBuilder()
+                                        .setAttractionName(booking.getAttractionName())
+                                        .setUUID(booking.getUserId().toString())
+                                        .setTimeSlot(booking.getSlot().toString())
+                                        .build()
+                                );
                             }
                         })
                 );

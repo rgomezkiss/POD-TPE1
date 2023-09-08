@@ -4,6 +4,7 @@ import ar.edu.itba.pod.grpc.booking.*;
 import ar.edu.itba.pod.server.ParkData;
 import ar.edu.itba.pod.server.models.ServerAttraction;
 import ar.edu.itba.pod.server.models.ServerBooking;
+import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 
 import java.time.LocalTime;
@@ -23,9 +24,10 @@ public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
     }
 
     @Override
-    public void getAttractions(GetAttractionsRequest request, StreamObserver<GetAttractionsResponse> responseObserver) {
+    public void getAttractions(Empty request, StreamObserver<GetAttractionsResponse> responseObserver) {
         List<ServerAttraction> attractionList = new ArrayList<>(parkData.getAttractions().values());
 
+        // TODO: ver si debería ordenarse
         GetAttractionsResponse response = GetAttractionsResponse.newBuilder()
                 .addAllAttractions(attractionList.stream()
                 .map(attraction -> AttractionResponse.newBuilder()
@@ -64,29 +66,28 @@ public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
 
     // TODO: podría devolverse únicamente Empty y que los errores se catcheen por el interceptor
     @Override
-    public void book(BookRequest request, StreamObserver<BookResponse> responseObserver) {
-        // Ver que devolver...
-        boolean toRet = parkData.book(new ServerBooking(request));
+    public void book(BookRequest request, StreamObserver<Empty> responseObserver) {
+        parkData.book(new ServerBooking(request));
 
-        BookResponse response = BookResponse.newBuilder().build();
+        Empty response = Empty.newBuilder().build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void confirmBooking(BookRequest request, StreamObserver<BookResponse> responseObserver) {
-        boolean toRet = parkData.confirmBooking(new ServerBooking(request));
+    public void confirmBooking(BookRequest request, StreamObserver<Empty> responseObserver) {
+        parkData.confirmBooking(new ServerBooking(request));
 
-        BookResponse response = BookResponse.newBuilder().build();
+        Empty response = Empty.newBuilder().build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void cancelBooking(BookRequest request, StreamObserver<BookResponse> responseObserver) {
-        boolean toRet = parkData.cancelBooking(new ServerBooking(request));
+    public void cancelBooking(BookRequest request, StreamObserver<Empty> responseObserver) {
+        parkData.cancelBooking(new ServerBooking(request));
 
-        BookResponse response = BookResponse.newBuilder().build();
+        Empty response = Empty.newBuilder().build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }

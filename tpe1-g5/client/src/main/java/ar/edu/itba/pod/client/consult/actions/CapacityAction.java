@@ -1,11 +1,16 @@
 package ar.edu.itba.pod.client.consult.actions;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
 import ar.edu.itba.pod.client.consult.utils.ConsultParams;
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
-import ar.edu.itba.pod.grpc.park_consult.GetSuggestedCapacityRequest;
-import ar.edu.itba.pod.grpc.park_consult.GetSuggestedCapacityResponse;
-import ar.edu.itba.pod.grpc.park_consult.ParkConsultServiceGrpc;
+import ar.edu.itba.pod.grpc.park_consult.*;
 import io.grpc.ManagedChannel;
 
 public class CapacityAction implements Action {
@@ -18,7 +23,25 @@ public class CapacityAction implements Action {
         GetSuggestedCapacityResponse capacityResponse = blockingStub.
                 getSuggestedCapacity(GetSuggestedCapacityRequest.newBuilder().setDay(consultParams.getDay()).build());
 
-        // Imprimir con formato que corresponde en out.txt
-        //TODO
+        writeToFile(capacityResponse.getSuggestedCapacitiesList(), consultParams.getOutPath());
+    }
+
+    private void writeToFile(List<SuggestedCapacity> suggestedCapacities, String path) {
+        try {
+            Path filePath = Paths.get(path);
+
+            List<String> lines = suggestedCapacities.stream()
+                    .map(capacity -> String.format("%s | %7d | %s",
+                            capacity.getMaxCapSlot(),
+                            capacity.getSuggestedCapacity(),
+                            capacity.getAttractionName()))
+                    .collect(Collectors.toList());
+
+            lines.add(0, "Slot  | Capacity | Attraction");
+
+            Files.write(filePath, lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

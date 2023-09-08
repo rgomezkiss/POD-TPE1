@@ -15,7 +15,6 @@ message GetSuggestedCapacityRequest {
   int32 day = 1;
 }
 
-//List<SuggestedCapacity>
 message GetSuggestedCapacityResponse {
   repeated SuggestedCapacity suggestedCapacities = 1;
 }
@@ -30,7 +29,6 @@ message GetBookingsRequest {
   int32 day = 1;
 }
 
-//List<BookingResponse>
 message GetBookingsResponse {
   repeated BookingResponse bookings = 1;
 }
