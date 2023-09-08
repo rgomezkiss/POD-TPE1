@@ -37,8 +37,7 @@ public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
 
     @Override
     public void getAvailability(GetAvailabilityRequest request, StreamObserver<GetAvailabilityResponse> responseObserver) {
-
-
+        //TODO
     }
 
     // TODO: podría devolverse únicamente Empty y que los errores se catcheen por el interceptor
