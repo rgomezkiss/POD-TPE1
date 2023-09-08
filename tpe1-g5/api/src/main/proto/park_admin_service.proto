@@ -6,11 +6,12 @@ option java_package = "ar.edu.itba.pod.grpc.park_admin";
 option java_multiple_files = true;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
 
 service ParkAdminService {
   rpc AddAttraction(AddAttractionRequest) returns (google.protobuf.Empty);
-  rpc AddTicket(AddTicketRequest) returns (BooleanResponse);
-  rpc AddSlot(AddSlotRequest) returns (GenericMessageResponse);
+  rpc AddTicket(AddTicketRequest) returns (google.protobuf.Empty);
+  rpc AddSlot(AddSlotRequest) returns (AddSlotResponse);
 }
 
 message AddAttractionRequest {
@@ -18,14 +19,6 @@ message AddAttractionRequest {
   string openingTime = 2; //HH:MM
   string closingTime = 3;
   int32 slotSize = 4;
-}
-
-message BooleanResponse {
-  bool value = 1;
-}
-
-message GenericMessageResponse {
-  string message = 1;
 }
 
 message AddTicketRequest {
@@ -44,4 +37,10 @@ message AddSlotRequest {
   string attractionName = 1;
   int32 day = 2;
   int32 capacity = 3;
+}
+
+message AddSlotResponse {
+  int32 confirmed = 1;
+  int32 relocated = 2;
+  int32 cancelled = 3;
 }

@@ -2,7 +2,9 @@ package ar.edu.itba.pod.server.models;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import ar.edu.itba.pod.grpc.park_admin.*;
@@ -52,6 +54,20 @@ public class ServerAttraction {
             timeSlots.add(aux);
             aux = aux.plusMinutes(this.slotSize);
         }
+    }
+
+    public List<LocalTime> getSlotsInRange(LocalTime startTime, LocalTime endTime) {
+        List<LocalTime> validTimesInRange = new ArrayList<>();
+        LocalTime currentTime = openingTime;
+
+        while (!currentTime.isAfter(closingTime)) {
+            if (!currentTime.isBefore(startTime) && !currentTime.isAfter(endTime)) {
+                validTimesInRange.add(currentTime);
+            }
+            currentTime = currentTime.plusMinutes(this.slotSize);
+        }
+
+        return validTimesInRange;
     }
 
     @Override

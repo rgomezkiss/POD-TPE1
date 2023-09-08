@@ -3,6 +3,7 @@ package ar.edu.itba.pod.server;
 import ar.edu.itba.pod.grpc.booking.AvailabilityResponse;
 import ar.edu.itba.pod.grpc.booking.GetAvailabilityResponse;
 import ar.edu.itba.pod.grpc.park_admin.AddSlotRequest;
+import ar.edu.itba.pod.grpc.park_admin.AddSlotResponse;
 import ar.edu.itba.pod.grpc.park_consult.SuggestedCapacity;
 import ar.edu.itba.pod.server.exceptions.AttractionAlreadyExistsException;
 import ar.edu.itba.pod.server.models.DayCapacity;
@@ -33,7 +34,7 @@ public class ParkData {
     /**
      * ParkAdminService methods
      **/
-    public boolean addAttraction(ServerAttraction attraction) {
+    public void addAttraction(ServerAttraction attraction) {
         // TODO: agregar validaciones para especificar errores:
         // Duplicate name.
         // InvalidTime,
@@ -48,11 +49,9 @@ public class ParkData {
         else {
             throw new AttractionAlreadyExistsException();
         }
-        // También agrego en bookings
-        return true;
     }
 
-    public boolean addTicket(ServerTicket ticket) {
+    public void addTicket(ServerTicket ticket) {
         // TODO: agregar validaciones para especificar errores:
         //UUID no valido
         //type not valid
@@ -64,41 +63,44 @@ public class ParkData {
         tickets.putIfAbsent(ticket.getUserId(), new ConcurrentHashMap<>());
 
         // Podría solo tener el ticket type al final tal vez
-        return tickets.get(ticket.getUserId()).put(ticket.getDay(), ticket) == null;
+        tickets.get(ticket.getUserId()).put(ticket.getDay(), ticket);
     }
 
-    public void addSlot(AddSlotRequest request) {
+    public AddSlotResponse addSlot(AddSlotRequest request) {
         ServerAttraction attraction = attractions.get(request.getAttractionName());
 
         if (attraction == null) {
-            return;
+            return null;
         }
 
         DayCapacity dayCapacity = getDayCapacity(attraction, request.getDay());
 
         if (dayCapacity.getCapacity() == null) {
             // Ya agregamos la capacidad
-            return;
+            return null;
         }
 
         dayCapacity.setCapacity(request.getCapacity());
 
-        reorganizeBookings(attraction, dayCapacity);
+        return reorganizeBookings(attraction, dayCapacity);
     }
 
-    private void reorganizeBookings(ServerAttraction attraction, DayCapacity capacity) {
+    private AddSlotResponse reorganizeBookings(ServerAttraction attraction, DayCapacity capacity) {
         Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> attractionBookings = bookings.get(attraction);
 
         if (attractionBookings == null) {
-            return;
+            return null;
         }
 
         Map<LocalTime, List<ServerBooking>> capacityBookings = attractionBookings.get(capacity);
         if (capacityBookings == null) {
-            return;
+            return null;
         }
 
         List<ServerBooking> toMove = new ArrayList<>();
+        Integer confirmed = 0;
+        Integer relocated = 0;
+        Integer cancelled = 0;
 
         // Recorremos las reservas y los horarios disponibles
         for (Map.Entry<LocalTime, List<ServerBooking>> entry : capacityBookings.entrySet()) {
@@ -107,6 +109,7 @@ public class ParkData {
             // Confirmamos todas las que se puedan
             for (int i = 0; i < capacity.getCapacity(); i++){
                 reservations.get(i).setConfirmed(true);
+                confirmed++;
                 //TODO: notificar que se confirmo o cargo cap
             }
 
@@ -123,14 +126,20 @@ public class ParkData {
         for (ServerBooking booking : toMove) {
             LocalTime nextAvailableTime = getNextAvailableTime(capacityBookings, booking.getSlot(), attraction, capacity.getCapacity());
 
-            if (nextAvailableTime == null) {
-                // Iterar sobre las que sobren y eliminar y avisar...
-                return;
+            if (nextAvailableTime != null) {
+                capacityBookings.putIfAbsent(nextAvailableTime, new ArrayList<>());
+                capacityBookings.get(nextAvailableTime).add(booking);
+                relocated++;
             }
 
-            capacityBookings.putIfAbsent(nextAvailableTime, new ArrayList<>());
-            capacityBookings.get(nextAvailableTime).add(booking);
+            // Iterar sobre las que van a quedar canceladas
         }
+
+        return AddSlotResponse.newBuilder()
+                .setConfirmed(confirmed)
+                .setRelocated(relocated)
+                .setCancelled(cancelled)
+                .build();
     }
 
     private LocalTime getNextAvailableTime(Map<LocalTime, List<ServerBooking>> capacityBookings, LocalTime bookingTime, ServerAttraction attraction, Integer capacity) {
@@ -187,6 +196,30 @@ public class ParkData {
         }
 
         return false;
+    }
+
+    public List<AvailabilityResponse> getAvailability(int day, LocalTime startTime, LocalTime endTime) {
+        List<ServerAttraction> serverAttractions = new ArrayList<>(attractions.values());
+        List<AvailabilityResponse> responses = new ArrayList<>();
+
+        for (ServerAttraction attraction: serverAttractions) {
+            responses.addAll(getAvailability(attraction.getAttractionName(), day, startTime, endTime));
+        }
+
+        return responses;
+    }
+
+    public List<AvailabilityResponse> getAvailability(String attractionName, int day, LocalTime startTime, LocalTime endTime){
+        ServerAttraction attraction = attractions.get(attractionName);
+
+        List<LocalTime> timeSlotsInRange = attraction.getSlotsInRange(startTime, endTime);
+        List<AvailabilityResponse> responses = new ArrayList<>();
+
+        for (LocalTime slot : timeSlotsInRange) {
+            responses.add(getAvailability(attractionName, day, slot));
+        }
+
+        return responses;
     }
 
     public AvailabilityResponse getAvailability(String attractionName, int day, LocalTime slot){

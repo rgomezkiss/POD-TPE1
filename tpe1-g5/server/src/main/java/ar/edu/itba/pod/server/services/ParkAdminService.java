@@ -14,25 +14,26 @@ public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplB
         this.parkData = parkData;
     }
 
-    // TODO: podría no devolverse nada y manejar solo casos de error
     @Override
-    public void addAttraction(AddAttractionRequest attraction, StreamObserver<com.google.protobuf.Empty> responseObserver) {
+    public void addAttraction(AddAttractionRequest attraction, StreamObserver<Empty> responseObserver) {
         parkData.addAttraction(new ServerAttraction(attraction));
-
         Empty response = Empty.newBuilder().build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void addTicket(AddTicketRequest ticket, StreamObserver<BooleanResponse> responseObserver) {
-        BooleanResponse response = BooleanResponse.newBuilder().setValue(parkData.addTicket(new ServerTicket(ticket))).build();
+    public void addTicket(AddTicketRequest ticket, StreamObserver<Empty> responseObserver) {
+        parkData.addTicket(new ServerTicket(ticket));
+        Empty response = Empty.newBuilder().build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void addSlot(AddSlotRequest request, StreamObserver<GenericMessageResponse> responseObserver) {
-        //TODO
+    public void addSlot(AddSlotRequest request, StreamObserver<AddSlotResponse> responseObserver) {
+        AddSlotResponse response = parkData.addSlot(request);
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 }

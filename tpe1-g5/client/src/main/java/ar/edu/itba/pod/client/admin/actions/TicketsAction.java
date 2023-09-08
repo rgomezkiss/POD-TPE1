@@ -5,10 +5,12 @@ import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.grpc.park_admin.*;
 import io.grpc.ManagedChannel;
+import io.grpc.StatusRuntimeException;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class TicketsAction implements Action {
@@ -25,10 +27,12 @@ public class TicketsAction implements Action {
         int notAdded = 0;
 
         for (AddTicketRequest ticket : toAddTickets) {
-            BooleanResponse booleanResponse = blockingStub.addTicket(ticket);
-            if (booleanResponse.getValue()) {
+            try {
+                blockingStub.addTicket(ticket);
                 added++;
-            } else {
+            } catch (StatusRuntimeException e) {
+                //TODO: usar un logger
+//                System.out.println(e.getStatus().getCode() + e.getMessage());
                 notAdded++;
             }
         }
