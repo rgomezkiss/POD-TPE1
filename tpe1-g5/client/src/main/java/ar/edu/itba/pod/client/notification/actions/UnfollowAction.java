@@ -6,18 +6,23 @@ import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.notification.NotificationRequest;
 import ar.edu.itba.pod.grpc.notification.NotificationServiceGrpc;
 import io.grpc.ManagedChannel;
+import io.grpc.StatusRuntimeException;
 
 public class UnfollowAction implements Action {
     @Override
     public void execute(AbstractParams params, ManagedChannel channel) {
         NotificationParams notificationParams = (NotificationParams) params;
 
-        NotificationServiceGrpc.NotificationServiceBlockingStub blockingStub = NotificationServiceGrpc.newBlockingStub(channel);
+        try {
+            NotificationServiceGrpc.NotificationServiceBlockingStub blockingStub = NotificationServiceGrpc.newBlockingStub(channel);
 
-        System.out.println(blockingStub.unfollow(NotificationRequest.newBuilder()
-                .setAttractionName(notificationParams.getRideName())
-                .setDay(notificationParams.getDay())
-                .setUUID(notificationParams.getVisitorId())
-                .build()));
+            System.out.println(blockingStub.unfollow(NotificationRequest.newBuilder()
+                    .setAttractionName(notificationParams.getRideName())
+                    .setDay(notificationParams.getDay())
+                    .setUUID(notificationParams.getVisitorId())
+                    .build()));
+        } catch (StatusRuntimeException e) {
+
+        }
     }
 }

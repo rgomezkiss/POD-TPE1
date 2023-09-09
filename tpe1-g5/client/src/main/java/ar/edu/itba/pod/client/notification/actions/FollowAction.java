@@ -7,7 +7,10 @@ import ar.edu.itba.pod.grpc.notification.NotificationRequest;
 import ar.edu.itba.pod.grpc.notification.NotificationServiceGrpc;
 import com.google.protobuf.StringValue;
 import io.grpc.ManagedChannel;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+
+import java.util.concurrent.TimeUnit;
 
 public class FollowAction implements Action {
     @Override
@@ -33,10 +36,22 @@ public class FollowAction implements Action {
             }
         };
 
-        stub.follow(NotificationRequest.newBuilder()
-                .setAttractionName(notificationParams.getRideName())
-                .setDay(notificationParams.getDay())
-                .setUUID(notificationParams.getVisitorId())
-                .build(), responseObserver);
+        try {
+            stub.follow(NotificationRequest.newBuilder()
+                    .setAttractionName(notificationParams.getRideName())
+                    .setDay(notificationParams.getDay())
+                    .setUUID(notificationParams.getVisitorId())
+                    .build(), responseObserver);
+        } catch (StatusRuntimeException e) {
+
+        }
+        finally {
+            try {
+                channel.shutdown().awaitTermination(10000, TimeUnit.DAYS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
 }

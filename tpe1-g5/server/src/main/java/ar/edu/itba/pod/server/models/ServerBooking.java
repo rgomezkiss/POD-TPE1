@@ -23,7 +23,6 @@ public class ServerBooking {
         this.isConfirmed = false;
         this.bookingTime = LocalTime.now();
         CommonUtils.validateDay(this.day);
-
     }
 
     public LocalTime getSlot() {

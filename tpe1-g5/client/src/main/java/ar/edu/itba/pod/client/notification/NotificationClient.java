@@ -29,13 +29,13 @@ public class NotificationClient {
                 .usePlaintext()
                 .build();
 
-        try {
-            switch (NotificationActions.valueOf(params.getAction())) {
-                case FOLLOW -> new FollowAction().execute(params, channel);
-                case UNFOLLOW -> new UnfollowAction().execute(params, channel);
+        switch (NotificationActions.valueOf(params.getAction())) {
+            case FOLLOW -> new FollowAction().execute(params, channel);
+            case UNFOLLOW ->{
+                new UnfollowAction().execute(params, channel);
+                channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
             }
-        } finally {
-            channel.shutdown().awaitTermination(10000, TimeUnit.SECONDS);
         }
+
     }
 }

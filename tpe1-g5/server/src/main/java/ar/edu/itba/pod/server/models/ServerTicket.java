@@ -19,7 +19,7 @@ public class ServerTicket {
         this.userId = UUID.fromString(ticket.getUUID());
         this.day = ticket.getTicketDay();
         try {
-            this.ticketType = TicketType.valueOf(ticket.getTicketType());
+            this.ticketType = TicketType.valueOf(ticket.getTicketType().toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new InvalidException("Invalid ticket type");
         }

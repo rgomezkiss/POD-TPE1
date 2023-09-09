@@ -7,6 +7,8 @@ import ar.edu.itba.pod.grpc.park_admin.AddAttractionRequest;
 import ar.edu.itba.pod.grpc.park_admin.ParkAdminServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,6 +17,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RidesAction implements Action {
+    private final static Logger logger = LoggerFactory.getLogger(RidesAction.class);
+
     @Override
     public void execute(AbstractParams params, ManagedChannel channel) {
         AdminParams adminParams = (AdminParams) params;
@@ -31,8 +35,7 @@ public class RidesAction implements Action {
                 blockingStub.addAttraction(attraction);
                 added++;
             } catch (StatusRuntimeException e) {
-                //TODO: usar un logger
-//                System.out.println(e.getStatus().getCode() + e.getMessage());
+                logger.info(String.format("%s: %s", e.getStatus().getCode().toString(), e.getMessage()));
                 notAdded++;
             }
         }

@@ -4,6 +4,7 @@ import ar.edu.itba.pod.server.exceptions.InvalidException;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class CommonUtils {
 
@@ -25,9 +26,14 @@ public class CommonUtils {
     public final static String BOOKING_NOT_FOUND = "Booking not found";
     public final static String INVALID_DAY = "Invalid day";
     public final static String INVALID_TIME = "Invalid time";
+    public final static String ALREADY_FOLLOWING = "Already following";
 
     public static LocalTime parseTime(final String time){
-        return LocalTime.parse(time, formatter);
+        try {
+            return LocalTime.parse(time, formatter);
+        } catch (DateTimeParseException e){
+            return null;
+        }
     }
 
     public static void validateDay(final Integer day){

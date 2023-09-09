@@ -31,7 +31,7 @@ public class ServerAttraction {
         if(this.slotSize <= 0){
             throw new InvalidException("Slot size must be a positive number");
         }
-        if(this.openingTime.plusMinutes(this.slotSize).isBefore(this.closingTime)){
+        if(this.openingTime.plusMinutes(this.slotSize).isAfter(this.closingTime)){
             throw new InvalidException("Slot size not enough");
         }
     }
@@ -63,8 +63,8 @@ public class ServerAttraction {
         final List<LocalTime> validTimesInRange = new ArrayList<>();
         LocalTime currentTime = openingTime;
 
-        while (!currentTime.isAfter(closingTime)) {
-            if (!currentTime.isBefore(startTime) && !currentTime.isAfter(endTime)) {
+        while (!currentTime.isAfter(closingTime) && !currentTime.isAfter(endTime)) {
+            if (!currentTime.isBefore(startTime)) {
                 validTimesInRange.add(currentTime);
             }
             currentTime = currentTime.plusMinutes(this.slotSize);

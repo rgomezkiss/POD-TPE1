@@ -12,6 +12,7 @@ import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.park_consult.*;
 import io.grpc.ManagedChannel;
+import io.grpc.StatusRuntimeException;
 
 public class CapacityAction implements Action {
     @Override
@@ -20,10 +21,14 @@ public class CapacityAction implements Action {
 
         ParkConsultServiceGrpc.ParkConsultServiceBlockingStub blockingStub = ParkConsultServiceGrpc.newBlockingStub(channel);
 
-        GetSuggestedCapacityResponse capacityResponse = blockingStub.
-                getSuggestedCapacity(GetSuggestedCapacityRequest.newBuilder().setDay(consultParams.getDay()).build());
+        try {
+            GetSuggestedCapacityResponse capacityResponse = blockingStub.
+                    getSuggestedCapacity(GetSuggestedCapacityRequest.newBuilder().setDay(consultParams.getDay()).build());
 
-        writeToFile(capacityResponse.getSuggestedCapacitiesList(), consultParams.getOutPath());
+            writeToFile(capacityResponse.getSuggestedCapacitiesList(), consultParams.getOutPath());
+        } catch (StatusRuntimeException e) {
+
+        }
     }
 
     private void writeToFile(List<SuggestedCapacity> suggestedCapacities, String path) {

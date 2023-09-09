@@ -5,6 +5,7 @@ import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.park_consult.*;
 import io.grpc.ManagedChannel;
+import io.grpc.StatusRuntimeException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -21,10 +22,14 @@ public class ConfirmedAction implements Action {
 
         ParkConsultServiceGrpc.ParkConsultServiceBlockingStub blockingStub = ParkConsultServiceGrpc.newBlockingStub(channel);
 
-        GetBookingsResponse bookingsResponse = blockingStub.
-                getBookings(GetBookingsRequest.newBuilder().setDay(consultParams.getDay()).build());
+        try {
+            GetBookingsResponse bookingsResponse = blockingStub.
+                    getBookings(GetBookingsRequest.newBuilder().setDay(consultParams.getDay()).build());
 
-        writeToFile(bookingsResponse.getBookingsList(), consultParams.getOutPath());
+            writeToFile(bookingsResponse.getBookingsList(), consultParams.getOutPath());
+        } catch (StatusRuntimeException e) {
+
+        }
     }
 
     private void writeToFile(List<BookingResponse> bookingList, String path) {

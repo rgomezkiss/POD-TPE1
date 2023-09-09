@@ -7,6 +7,7 @@ import ar.edu.itba.pod.grpc.booking.BookingServiceGrpc;
 import ar.edu.itba.pod.grpc.booking.GetAvailabilityRequest;
 import ar.edu.itba.pod.grpc.booking.GetAvailabilityResponse;
 import io.grpc.ManagedChannel;
+import io.grpc.StatusRuntimeException;
 
 public class AvailabilityAction implements Action {
     @Override
@@ -15,22 +16,27 @@ public class AvailabilityAction implements Action {
 
         BookingServiceGrpc.BookingServiceBlockingStub blockingStub = BookingServiceGrpc.newBlockingStub(channel);
 
-        GetAvailabilityResponse availabilityResponse = blockingStub.getAvailability(
-                GetAvailabilityRequest.newBuilder()
-                    .setDay(bookingParams.getDay())
-                    .setAttractionName(bookingParams.getRide())
-                    .setTimeRangeStart(bookingParams.getSlot())
-                    .setTimeRangeEnd(bookingParams.getSlotTo())
-                    .build()
-        );
+        try {
+            GetAvailabilityResponse availabilityResponse = blockingStub.getAvailability(
+                    GetAvailabilityRequest.newBuilder()
+                            .setDay(bookingParams.getDay())
+                            .setAttractionName(bookingParams.getRide())
+                            .setTimeRangeStart(bookingParams.getSlot())
+                            .setTimeRangeEnd(bookingParams.getSlotTo())
+                            .build()
+            );
 
 //        Slot  | Capacity  | Pending   | Confirmed | Attraction
 //        15:30 |       30  |        0  |        30 | SpaceMountain
 
-        // TODO: ver que pasa con null y que tenga formato lindo
-        availabilityResponse.getAvailabilityResponsesList()
-                .forEach((availability) ->
-                System.out.println(String.format("%s | %d | %d | %d | %s",
-                availability.getSlot(), availability.getCapacity(), availability.getPending(), availability.getConfirmed(), availability.getAttractionName())));
-    }
+            // TODO: ver que pasa con null y que tenga formato lindo
+            availabilityResponse.getAvailabilityResponsesList()
+                    .forEach((availability) ->
+                            System.out.println(String.format("%s | %d | %d | %d | %s",
+                                    availability.getSlot(), availability.getCapacity(), availability.getPending(), availability.getConfirmed(), availability.getAttractionName())));
+
+        } catch (StatusRuntimeException e) {
+
+        }
+   }
 }
