@@ -94,6 +94,13 @@ public class ParkData {
         return reorganizeBookings(attraction, request.getDay(), request.getCapacity());
     }
 
+    // TODO Para cada slot
+    //del día (en orden cronológico) y en función de la capacidad indicada se deberán
+    //primero confirmar todas las reservas posibles teniendo en cuenta el orden de la
+    //realización de la reserva (priorizando a las primeras N reservas realizadas siendo N
+    //la capacidad del slot). Luego, para cada slot del día (en orden cronológico), y de
+    //existir todavía reservas pendientes, se deberán intentar reubicar esas reservas en
+    //otros slots “cercanos” del mismo día, siempre considerando la capacidad de cada slot.
     private AddSlotResponse reorganizeBookings(final ServerAttraction attraction, final Integer day, final Integer capacity) {
         final Map<Integer, Map<LocalTime, List<ServerBooking>>> attractionBookings = bookings.get(attraction);
         final Map<LocalTime, List<ServerBooking>> capacityBookings = attractionBookings.getOrDefault(day, new HashMap<>());
@@ -110,6 +117,7 @@ public class ParkData {
             // Confirmamos todas las que se puedan
             for (int i = 0; i < capacity; i++) {
                 reservations.get(i).setConfirmed(true);
+                reservations.get(i).setConfirmedTime(LocalTime.now());
                 confirmed++;
                 //TODO: notificar que se confirmo o cargo cap
             }
@@ -184,6 +192,7 @@ public class ParkData {
                     }
                     books.add(booking);
                     booking.setConfirmed(true);
+                    booking.setConfirmedTime(LocalTime.now());
                     ticket.book();
                 }
                 throw new UnavailableException(CommonUtils.CAPACITY_FULL_EXCEPTION);
@@ -305,6 +314,7 @@ public class ParkData {
                 throw new AlreadyExistsException(CommonUtils.BOOKING_ALREADY_CONFIRMED);
             }
             toConfirmBook.get().setConfirmed(true);
+            toConfirmBook.get().setConfirmedTime(LocalTime.now());
         } else {
             throw new NotFoundException(CommonUtils.BOOKING_NOT_FOUND);
 
@@ -351,14 +361,16 @@ public class ParkData {
         for (ServerAttraction attraction : attractions.values()) {
             final Integer capacity = getDayCapacity(attraction, day);
             if (capacity == null) {
-                final  SuggestedCapacity aux = singleSuggestedCapacity(attraction, day);
+                final SuggestedCapacity aux = singleSuggestedCapacity(attraction, day);
                 if (aux != null) {
                     suggestedCapacities.add(aux);
                 }
             }
         }
 
-        // TODO: ordenar
+        suggestedCapacities.sort((capacity1, capacity2) ->
+                Integer.compare(capacity2.getSuggestedCapacity(), capacity1.getSuggestedCapacity())
+        );
         return suggestedCapacities;
     }
 
@@ -395,23 +407,25 @@ public class ParkData {
         for (Map<Integer, Map<LocalTime, List<ServerBooking>>> reservationsByDay : bookings.values()) {
             if (reservationsByDay.containsKey(day)) {
                 final Map<LocalTime, List<ServerBooking>> reservationsByTime = reservationsByDay.get(day);
-                reservationsByTime.values().forEach(bookingsAtTime ->
-                        bookingsAtTime.forEach(booking -> {
-                            if (booking.isConfirmed()) {
-                                bookingsByDay.add(
-                                    BookingResponse.newBuilder()
-                                        .setAttractionName(booking.getAttractionName())
-                                        .setUUID(booking.getUserId().toString())
-                                        .setTimeSlot(booking.getSlot().toString())
-                                        .build()
-                                );
-                            }
-                        })
-                );
+
+                // Agregamos todas las reservas del día a una lista temporal para despues ordenarlas
+                final List<ServerBooking> allBookingsAtDay = new ArrayList<>();
+                reservationsByTime.values().forEach(allBookingsAtDay::addAll);
+                allBookingsAtDay.sort(Comparator.comparing(ServerBooking::getConfirmedTime));
+
+                allBookingsAtDay.forEach(booking -> {
+                    if (booking.isConfirmed()) {
+                        bookingsByDay.add(BookingResponse.newBuilder()
+                                .setAttractionName(booking.getAttractionName())
+                                .setUUID(booking.getUserId().toString())
+                                .setTimeSlot(booking.getSlot().toString())
+                                .build()
+                        );
+                    }
+                });
             }
         }
 
-        // TODO: ordenar
         return bookingsByDay;
     }
 
@@ -423,7 +437,7 @@ public class ParkData {
         // si no existe una atracción con ese nombre --
         // si el día es inválido --
         // si no cuenta con un pase válido para ese día --
-        // si ya estaba registrado para ser notificado de esa atracción ese día TODO
+        // si ya estaba registrado para ser notificado de esa atracción ese día --
 
         CommonUtils.validateDay(request.getDay());
         validateAttractionExists(request.getAttractionName());
@@ -441,18 +455,18 @@ public class ParkData {
         // si no existe una atracción con ese nombre --
         // si el día es inválido --
         // si no cuenta con un pase válido para ese día --
-        // si no estaba registrado para ser notificado de esa atracción ese día TODO
+        // si no estaba registrado para ser notificado de esa atracción ese día --
 
         CommonUtils.validateDay(request.getDay());
         validateAttractionExists(request.getAttractionName());
         validateTicketExists(UUID.fromString(request.getUUID()), request.getDay());
 
-        if (observers.containsKey(request)) {
-            throw new AlreadyExistsException(CommonUtils.ALREADY_FOLLOWING);
+        if (!observers.containsKey(request)) {
+            throw new AlreadyExistsException(CommonUtils.ALREADY_UNFOLLOWING);
         }
 
         observers.get(request).onCompleted();
-        observers.remove(request.getAttractionName());
+        observers.remove(request);
     }
 
     /**

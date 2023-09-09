@@ -27,6 +27,9 @@ public class CommonUtils {
     public final static String INVALID_DAY = "Invalid day";
     public final static String INVALID_TIME = "Invalid time";
     public final static String ALREADY_FOLLOWING = "Already following";
+    public final static String ALREADY_UNFOLLOWING = "Already unfollowing";
+    public final static String NEGATIVE_SLOT = "Slot size must be a positive number";
+    public final static String SLOT_SIZE_NOT_ENOUGH = "Slot size not enough";
 
     public static LocalTime parseTime(final String time){
         try {

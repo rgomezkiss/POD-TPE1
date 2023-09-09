@@ -14,6 +14,7 @@ public class ServerBooking {
     private final UUID userId;
     private boolean isConfirmed;
     private final LocalTime bookingTime;
+    private LocalTime confirmedTime;
 
     public ServerBooking(BookRequest bookRequest) {
         this.attractionName = bookRequest.getAttractionName();
@@ -22,6 +23,7 @@ public class ServerBooking {
         this.userId = UUID.fromString(bookRequest.getUUID());
         this.isConfirmed = false;
         this.bookingTime = LocalTime.now();
+        this.confirmedTime = null;
         CommonUtils.validateDay(this.day);
     }
 
@@ -48,6 +50,12 @@ public class ServerBooking {
     }
     public LocalTime getBookingTime() {
         return bookingTime;
+    }
+    public LocalTime getConfirmedTime() {
+        return confirmedTime;
+    }
+    public void setConfirmedTime(LocalTime confirmedTime) {
+        this.confirmedTime = confirmedTime;
     }
 
     @Override

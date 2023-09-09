@@ -14,10 +14,13 @@ public class AttractionsAction implements Action {
 
         GetAttractionsResponse attractionsResponse = blockingStub.getAttractions(Empty.newBuilder().build());
 
-        // TODO: falta formato ...
+        System.out.println("Attraction | Open time | Close time");
         attractionsResponse.getAttractionsList().forEach((attractionResponse) ->
-                System.out.println(attractionResponse.getAttractionName() +
-                        attractionResponse.getOpeningTime() + attractionResponse.getClosingTime())
+                System.out.printf("%s %s %s%n",
+                        attractionResponse.getAttractionName(),
+                        attractionResponse.getOpeningTime(),
+                        attractionResponse.getClosingTime()
+                )
         );
     }
 }

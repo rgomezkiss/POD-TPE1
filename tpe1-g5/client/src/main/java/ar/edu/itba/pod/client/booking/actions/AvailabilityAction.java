@@ -26,14 +26,18 @@ public class AvailabilityAction implements Action {
                             .build()
             );
 
-//        Slot  | Capacity  | Pending   | Confirmed | Attraction
-//        15:30 |       30  |        0  |        30 | SpaceMountain
+            //  Slot  | Capacity  | Pending   | Confirmed | Attraction
+            //  15:30 |       30  |        0  |        30 | SpaceMountain
 
-            // TODO: ver que pasa con null y que tenga formato lindo
-            availabilityResponse.getAvailabilityResponsesList()
-                    .forEach((availability) ->
-                            System.out.println(String.format("%s | %d | %d | %d | %s",
-                                    availability.getSlot(), availability.getCapacity(), availability.getPending(), availability.getConfirmed(), availability.getAttractionName())));
+            System.out.println("Slot | Capacity | Pending | Confirmed | Attraction");
+            availabilityResponse.getAvailabilityResponsesList().forEach((availability) ->
+                    System.out.printf("%s | %s | %d | %d | %s%n",
+                            availability.getSlot(),
+                            availability.getCapacity() == 0 ? "X" : String.valueOf(availability.getCapacity()),
+                            availability.getPending(),
+                            availability.getConfirmed(),
+                            availability.getAttractionName())
+            );
 
         } catch (StatusRuntimeException e) {
 

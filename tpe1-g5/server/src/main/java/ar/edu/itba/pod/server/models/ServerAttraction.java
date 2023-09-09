@@ -29,10 +29,10 @@ public class ServerAttraction {
     private void validateParameters(){
         CommonUtils.validateTimeRange(this.openingTime, this.closingTime);
         if(this.slotSize <= 0){
-            throw new InvalidException("Slot size must be a positive number");
+            throw new InvalidException(CommonUtils.NEGATIVE_SLOT);
         }
         if(this.openingTime.plusMinutes(this.slotSize).isAfter(this.closingTime)){
-            throw new InvalidException("Slot size not enough");
+            throw new InvalidException(CommonUtils.SLOT_SIZE_NOT_ENOUGH);
         }
     }
 

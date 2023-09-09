@@ -15,7 +15,6 @@ public class NotificationService extends NotificationServiceGrpc.NotificationSer
     @Override
     public void follow(final NotificationRequest request, final StreamObserver<StringValue> responseObserver) {
         parkData.follow(request, responseObserver);
-        //TODO
     }
 
     @Override
