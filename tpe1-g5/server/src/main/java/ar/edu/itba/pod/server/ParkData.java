@@ -1,7 +1,6 @@
 package ar.edu.itba.pod.server;
 
 import ar.edu.itba.pod.grpc.booking.AvailabilityResponse;
-import ar.edu.itba.pod.grpc.booking.GetAvailabilityResponse;
 import ar.edu.itba.pod.grpc.park_admin.AddSlotRequest;
 import ar.edu.itba.pod.grpc.park_admin.AddSlotResponse;
 import ar.edu.itba.pod.grpc.park_consult.BookingResponse;
@@ -24,6 +23,19 @@ public class ParkData {
     private final Map<String, ServerAttraction> attractions = new ConcurrentHashMap<>();
     //UserId -> Day -> Ticket
     private final Map<UUID, Map<Integer, ServerTicket>> tickets = new ConcurrentHashMap<>();
+    private final static String ATTRACTION_ALREADY_EXISTS = "Attraction already exist";
+    private final static String TICKET_ALREADY_EXISTS = "Ticket already exist";
+    private final static String ATTRACTION_NOT_FOUND = "Attraction not found";
+    private final static String NEGATIVE_CAPACITY = "Capacity must be a positive number";
+    private final static String CAPACITY_ALREADY_ASSIGNED = "Capacity already assigned";
+    private final static String INVALID_SLOT = "Invalid slot";
+    private final static String INVALID_TICKET_FOR_DAY = "Invalid ticket type for that day";
+    private final static String BOOKING_ALREADY_EXISTS = "Booking already exists";
+    private final static String CAPACITY_FULL_EXCEPTION = "Can not book, capacity is full";
+    private final static String INVALID_BOOK_TYPE = "Can not book due to ticket type";
+    private final static String CAPACITY_NOT_ASSIGNED = "Capacity has not been assigned";
+    private final static String BOOKING_ALREADY_CONFIRMED = "Booking has been already confirmed";
+    private final static String BOOKING_NOT_FOUND = "Booking not found";
 
     public Map<String, ServerAttraction> getAttractions() {
         return attractions;
@@ -33,29 +45,27 @@ public class ParkData {
      * ParkAdminService methods
      **/
     public void addAttraction(ServerAttraction attraction) {
-        // TODO: agregar validaciones para especificar errores:
-        // Duplicate name.
-        // Las que siguen estan agregadas en el constructor
-        // InvalidTime,
-        // slotSize negative,
-        // slotSize not enough.
+        // Falla:
+        //  si Duplicate name --
+        //  si InvalidTime --
+        //  si slotSize negative --
+        //  si slotSize not enough --
         if (attractions.containsKey(attraction.getAttractionName())) {
-            throw new AttractionAlreadyExistsException();
+            throw new AlreadyExistsException(ATTRACTION_ALREADY_EXISTS);
         }
         attractions.put(attraction.getAttractionName(), attraction);
         bookings.put(attraction, new ConcurrentHashMap<>());
     }
 
     public void addTicket(ServerTicket ticket) {
-        // TODO: agregar validaciones para especificar errores:
-        //UUID no valido, hace falta esto ??
-        //type not valid
-        //day not valid
-        //already has ticket
-        UUID userId = ticket.getUserId();
-        Map<Integer, ServerTicket> userTickets = tickets.get(userId);
+        //Falla:
+        // si type not valid --
+        // si day not valid --
+        // si already has ticket --
+        final UUID userId = ticket.getUserId();
+        final Map<Integer, ServerTicket> userTickets = tickets.get(userId);
         if (userTickets != null && userTickets.containsKey(ticket.getDay())) {
-            throw new TicketAlreadyExistsException();
+            throw new AlreadyExistsException(TICKET_ALREADY_EXISTS);
         }
 
         tickets.putIfAbsent(ticket.getUserId(), new ConcurrentHashMap<>());
@@ -65,23 +75,23 @@ public class ParkData {
 
     public AddSlotResponse addSlot(AddSlotRequest request) {
         //Falla:
-        // si la atracción no existe
-        // si el día es inválido
-        // si la capacidad es negativa
-        // si ya se cargó una capacidad para esa atracción y día.
+        // si la atracción no existe --
+        // si el día es inválido --
+        // si la capacidad es negativa --
+        // si ya se cargó una capacidad para esa atracción y día --
         ServerAttraction attraction = attractions.get(request.getAttractionName());
 
         if (attraction == null) {
-            throw new AttractionNotExistException();
+            throw new NotFoundException(ATTRACTION_NOT_FOUND);
         }
         if(request.getCapacity() < 0){
-            throw new NegativeCapacityException();
+            throw new InvalidException(NEGATIVE_CAPACITY);
         }
 
         DayCapacity dayCapacity = getDayCapacity(attraction, request.getDay());
 
         if (dayCapacity.getCapacity() != null) {
-            throw new CapacityAlreadyAssignedException();
+            throw new AlreadyExistsException(CAPACITY_ALREADY_ASSIGNED);
         }
 
         dayCapacity.setCapacity(request.getCapacity());
@@ -90,23 +100,12 @@ public class ParkData {
     }
 
     private AddSlotResponse reorganizeBookings(ServerAttraction attraction, DayCapacity capacity) {
-        Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> attractionBookings = bookings.get(attraction);
-
-        //TODO Esto no deberia pasar, pq ya chequeamos antes que la atraccion no sea null no?
-        if (attractionBookings == null) {
-            return null;
-        }
-
-        Map<LocalTime, List<ServerBooking>> capacityBookings = attractionBookings.get(capacity);
-        //TODO Aca no pasa algo parecido? hace falta ver essto?
-        if (capacityBookings == null) {
-            return null;
-        }
-
+        Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> attractionBookings = bookings.getOrDefault(attraction, new ConcurrentHashMap<>());
+        Map<LocalTime, List<ServerBooking>> capacityBookings = attractionBookings.getOrDefault(capacity, new ConcurrentHashMap<>());
         List<ServerBooking> toMove = new ArrayList<>();
-        Integer confirmed = 0;
-        Integer relocated = 0;
-        Integer cancelled = 0;
+        int confirmed = 0;
+        int relocated = 0;
+        int cancelled = 0;
 
         // Recorremos las reservas y los horarios disponibles
         for (Map.Entry<LocalTime, List<ServerBooking>> entry : capacityBookings.entrySet()) {
@@ -160,45 +159,50 @@ public class ParkData {
     /**
      * BookingService methods
      **/
-    public boolean book(ServerBooking booking) {
+    public void book(ServerBooking booking) {
         //Falla:
-        // si la reserva ya existe
-        // si no se puede reservar la atracción según las restricciones del tipo de pase
+        // si la reserva ya existe --
+        // si no se puede reservar la atracción según las restricciones del tipo de pase --
         // si no existe una atracción con ese nombre --
         // si el día es inválido --
         // si el slot es inválido --
-        // si no cuenta con un pase válido para ese día
+        // si no cuenta con un pase válido para ese día --
+        // si se intenta reservar y ya se alcanzó la capacidad --
         ServerAttraction attraction = attractions.get(booking.getAttractionName());
 
         if (attraction == null) {
-            throw new AttractionNotExistException();
+            throw new NotFoundException(ATTRACTION_NOT_FOUND);
         }
-
         if (!attraction.isTimeSlotValid(booking.getSlot())) {
-            throw new InvalidSlotException();
+            throw new InvalidException(INVALID_SLOT);
         }
 
         ServerTicket ticket = tickets.getOrDefault(booking.getUserId(), new HashMap<>()).getOrDefault(booking.getDay(), null);
 
         // Si el usuario tiene un ticket asociado al día, y puede reservar en ese momento
-        if (ticket != null && ticket.canBook(booking.getSlot())) {
+        if (ticket == null) {
+            throw new InvalidException(INVALID_TICKET_FOR_DAY);
+        }
+
+        if (ticket.canBook(booking.getSlot())) {
             // Guardo el día y su capacity asociada. Si no estuviera se devuelve un nuevo dayCapacity con capacity == null
             DayCapacity dayCapacity = getDayCapacity(attraction, booking.getDay());
-
             // Agrego día del año si no estuviera. Se agrega con capacity == null
             bookings.get(attraction).putIfAbsent(dayCapacity, new ConcurrentHashMap<>());
-
             // Agrego hora del año sabiendo que es válida
             List<ServerBooking> serverBookingList = bookings.get(attraction).get(dayCapacity).putIfAbsent(booking.getSlot(), new ArrayList<>());
 
             // Si la capacidad ya esta cargada, entonces agrego y confirmo si hay lugar, modificando el confirmed
             if (dayCapacity.getCapacity() != null) {
                 if (serverBookingList.size() < dayCapacity.getCapacity()) {
+                    if(bookings.get(attraction).get(dayCapacity).get(booking.getSlot()).contains(booking)){
+                        throw new AlreadyExistsException(BOOKING_ALREADY_EXISTS);
+                    }
                     bookings.get(attraction).get(dayCapacity).get(booking.getSlot()).add(booking);
                     booking.setConfirmed(true);
                     ticket.book();
                 }
-                return false;
+                throw new UnavailableException(CAPACITY_FULL_EXCEPTION);
             }
             // Sino, agrego sin modificar el confirmed
             else {
@@ -207,7 +211,7 @@ public class ParkData {
             }
         }
 
-        return false;
+        throw new InvalidException(INVALID_BOOK_TYPE);
     }
 
     public List<AvailabilityResponse> getAvailability(int day, LocalTime startTime, LocalTime endTime) {
@@ -224,7 +228,7 @@ public class ParkData {
     public List<AvailabilityResponse> getAvailability(String attractionName, int day, LocalTime startTime, LocalTime endTime){
         ServerAttraction attraction = attractions.get(attractionName);
         if (attraction == null) {
-            throw new AttractionNotExistException();
+            throw new NotFoundException(ATTRACTION_NOT_FOUND);
         }
 
         List<LocalTime> timeSlotsInRange = attraction.getSlotsInRange(startTime, endTime);
@@ -240,7 +244,7 @@ public class ParkData {
     public AvailabilityResponse getAvailability(String attractionName, int day, LocalTime slot){
         ServerAttraction attraction = attractions.get(attractionName);
         if (attraction == null) {
-            throw new AttractionNotExistException();
+            throw new NotFoundException(ATTRACTION_NOT_FOUND);
         }
 
         DayCapacity dayCapacity = getDayCapacity(attraction, day);
@@ -280,13 +284,13 @@ public class ParkData {
         ServerAttraction attraction = attractions.get(booking.getAttractionName());
 
         if (attraction == null) {
-            throw new AttractionNotExistException();
+            throw new NotFoundException(ATTRACTION_NOT_FOUND);
         }
 
         DayCapacity dayCapacityAux = getDayCapacity(attraction, booking.getDay());
 
         if (dayCapacityAux.getCapacity() == null){
-            throw new CapacityNotAssignedException();
+            throw new NotFoundException(CAPACITY_NOT_ASSIGNED);
         }
 
         Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> dayMap = bookings.get(attraction);
@@ -313,13 +317,13 @@ public class ParkData {
 
         if (toConfirmBook.isPresent()) {
             if(toConfirmBook.get().isConfirmed()) {
-                throw new ReservationAlreadyConfirmedException();
+                throw new AlreadyExistsException(BOOKING_ALREADY_CONFIRMED);
             }
             // Confirmo la reserva
             toConfirmBook.get().setConfirmed(true);
         }
         // No existía la reserva
-        throw new ReservationNotExistException();
+        throw new NotFoundException(BOOKING_NOT_FOUND);
     }
 
     public boolean cancelBooking(ServerBooking booking) {
@@ -332,7 +336,7 @@ public class ParkData {
         ServerAttraction attraction = attractions.get(booking.getAttractionName());
 
         if (attraction == null) {
-            throw new AttractionNotExistException();
+            throw new NotFoundException(ATTRACTION_NOT_FOUND);
         }
 
         DayCapacity dayCapacityAux = new DayCapacity(booking.getDay());
@@ -358,7 +362,7 @@ public class ParkData {
             ticket.cancelBook();
         }
         // No existía la reserva
-        throw new ReservationNotExistException();
+        throw new NotFoundException(BOOKING_NOT_FOUND);
     }
 
     // Función que devuelve la clave dayCapacity asociada a una atracción en cierto día.

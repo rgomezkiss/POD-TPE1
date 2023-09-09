@@ -54,7 +54,7 @@ public class TicketsAction implements Action {
                     .map(line -> line.split(";"))
                     .map(data -> AddTicketRequest.newBuilder()
                             .setUUID(data[0])
-                            .setTicketType(TicketType.valueOf(data[1]))
+                            .setTicketType(data[1])
                             .setTicketDay(Integer.parseInt(data[2]))
                             .build())
                     .collect(Collectors.toList());

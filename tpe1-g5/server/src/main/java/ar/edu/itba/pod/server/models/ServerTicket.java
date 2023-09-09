@@ -2,7 +2,7 @@ package ar.edu.itba.pod.server.models;
 
 import ar.edu.itba.pod.grpc.park_admin.AddTicketRequest;
 import ar.edu.itba.pod.grpc.park_admin.TicketType;
-import ar.edu.itba.pod.server.exceptions.InvalidDayException;
+import ar.edu.itba.pod.server.exceptions.InvalidException;
 
 import java.time.LocalTime;
 import java.util.Objects;
@@ -14,22 +14,22 @@ public class ServerTicket {
     private final TicketType ticketType;
     private int bookings;
 
-    public ServerTicket(UUID userId, int day, TicketType ticketType) {
-        this.userId = userId;
-        this.day = day;
-        this.ticketType = ticketType;
-        this.bookings = 0;
-    }
-
     public ServerTicket(AddTicketRequest ticket) {
         this.userId = UUID.fromString(ticket.getUUID());
-        if(ticket.getTicketDay() < 1 || ticket.getTicketDay() > 365){
-            throw new InvalidDayException();
-        }
-        //TODO check type not valid
         this.day = ticket.getTicketDay();
-        this.ticketType = ticket.getTicketType();
+        try {
+            this.ticketType = TicketType.valueOf(ticket.getTicketType());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidException("Invalid ticket type");
+        }
         this.bookings = 0;
+        validateParameters();
+    }
+
+    private void validateParameters() {
+        if(this.day < 1 || this.day > 365){
+            throw new InvalidException("Invalid day");
+        }
     }
 
     public boolean canBook(LocalTime timeSlot) {
