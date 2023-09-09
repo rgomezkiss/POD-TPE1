@@ -1,11 +1,16 @@
 package ar.edu.itba.pod.server.models;
 
+import ar.edu.itba.pod.server.exceptions.InvalidDayException;
+
 // Clase para modelar la capacidad para cierto día, aún sin finalizar
 public class DayCapacity {
     private final Integer day;
     private Integer capacity;
 
     public DayCapacity(Integer day) {
+        if(day < 1 || day > 365){
+            throw new InvalidDayException();
+        }
         this.day = day;
         this.capacity = null;
     }
@@ -18,11 +23,6 @@ public class DayCapacity {
     }
 
     @Override
-    public int hashCode() {
-        return day.hashCode();
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -32,5 +32,10 @@ public class DayCapacity {
         }
         DayCapacity other = (DayCapacity) o;
         return this.day.equals(other.day);
+    }
+
+    @Override
+    public int hashCode() {
+        return day.hashCode();
     }
 }

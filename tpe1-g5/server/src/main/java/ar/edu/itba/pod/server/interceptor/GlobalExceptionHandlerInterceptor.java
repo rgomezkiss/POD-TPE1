@@ -1,6 +1,6 @@
 package ar.edu.itba.pod.server.interceptor;
 
-import ar.edu.itba.pod.server.exceptions.AttractionAlreadyExistsException;
+import ar.edu.itba.pod.server.exceptions.*;
 import com.google.rpc.Code;
 import io.grpc.*;
 import io.grpc.protobuf.StatusProto;
@@ -37,7 +37,17 @@ public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
         }
 
         private final Map<Class<? extends Throwable>, Code> errorCodesByException = Map.of(
-                AttractionAlreadyExistsException.class, Code.ALREADY_EXISTS
+                AttractionAlreadyExistsException.class, Code.ALREADY_EXISTS,
+                InvalidTimeException.class, Code.INVALID_ARGUMENT,
+                NegativeSlotSizeException.class, Code.INVALID_ARGUMENT,
+                SlotSizeNotEnoughException.class, Code.INVALID_ARGUMENT,
+                InvalidDayException.class, Code.INVALID_ARGUMENT,
+                TicketAlreadyExistsException.class, Code.ALREADY_EXISTS,
+                AttractionNotExistException.class, Code.INVALID_ARGUMENT,
+                CapacityAlreadyAssignedException.class, Code.ALREADY_EXISTS,
+                NegativeCapacityException.class, Code.INVALID_ARGUMENT,
+                InvalidSlotException.class, Code.INVALID_ARGUMENT
+                //ADD CAPACITYT NOT ASSIGNED
         );
 
         private void handleException(RuntimeException exception, ServerCall<T, R> serverCall, Metadata headers) {

@@ -28,6 +28,8 @@ message AddTicketRequest {
 }
 
 enum TicketType {
+    //TODO me parece que aca el enum 0 tenia que ser UNKNOWN
+    //pq en la teorica dijeron q siempre el primer enum es algo raro
     UNLIMITED = 0;
     THREE = 1;
     HALF_DAY = 2;

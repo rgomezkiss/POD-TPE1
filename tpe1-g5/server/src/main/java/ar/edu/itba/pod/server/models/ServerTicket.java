@@ -2,6 +2,7 @@ package ar.edu.itba.pod.server.models;
 
 import ar.edu.itba.pod.grpc.park_admin.AddTicketRequest;
 import ar.edu.itba.pod.grpc.park_admin.TicketType;
+import ar.edu.itba.pod.server.exceptions.InvalidDayException;
 
 import java.time.LocalTime;
 import java.util.Objects;
@@ -22,6 +23,10 @@ public class ServerTicket {
 
     public ServerTicket(AddTicketRequest ticket) {
         this.userId = UUID.fromString(ticket.getUUID());
+        if(ticket.getTicketDay() < 1 || ticket.getTicketDay() > 365){
+            throw new InvalidDayException();
+        }
+        //TODO check type not valid
         this.day = ticket.getTicketDay();
         this.ticketType = ticket.getTicketType();
         this.bookings = 0;

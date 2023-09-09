@@ -6,7 +6,7 @@ import ar.edu.itba.pod.grpc.park_admin.AddSlotRequest;
 import ar.edu.itba.pod.grpc.park_admin.AddSlotResponse;
 import ar.edu.itba.pod.grpc.park_consult.BookingResponse;
 import ar.edu.itba.pod.grpc.park_consult.SuggestedCapacity;
-import ar.edu.itba.pod.server.exceptions.AttractionAlreadyExistsException;
+import ar.edu.itba.pod.server.exceptions.*;
 import ar.edu.itba.pod.server.models.DayCapacity;
 import ar.edu.itba.pod.server.models.ServerAttraction;
 import ar.edu.itba.pod.server.models.ServerBooking;
@@ -22,7 +22,6 @@ public class ParkData {
     private final Map<ServerAttraction, Map<DayCapacity, Map<LocalTime, List<ServerBooking>>>> bookings = new ConcurrentHashMap<>();
     //AttractionName -> ServerAttraction
     private final Map<String, ServerAttraction> attractions = new ConcurrentHashMap<>();
-
     //UserId -> Day -> Ticket
     private final Map<UUID, Map<Integer, ServerTicket>> tickets = new ConcurrentHashMap<>();
 
@@ -36,47 +35,53 @@ public class ParkData {
     public void addAttraction(ServerAttraction attraction) {
         // TODO: agregar validaciones para especificar errores:
         // Duplicate name.
+        // Las que siguen estan agregadas en el constructor
         // InvalidTime,
         // slotSize negative,
         // slotSize not enough.
-        // Recién ahí devolver
-
-        if (!attractions.containsKey(attraction.getAttractionName())) {
-            attractions.put(attraction.getAttractionName(), attraction);
-            bookings.put(attraction, new ConcurrentHashMap<>());
-        }
-        else {
+        if (attractions.containsKey(attraction.getAttractionName())) {
             throw new AttractionAlreadyExistsException();
         }
+        attractions.put(attraction.getAttractionName(), attraction);
+        bookings.put(attraction, new ConcurrentHashMap<>());
     }
 
     public void addTicket(ServerTicket ticket) {
         // TODO: agregar validaciones para especificar errores:
-        //UUID no valido
+        //UUID no valido, hace falta esto ??
         //type not valid
-
         //day not valid
-
         //already has ticket
+        UUID userId = ticket.getUserId();
+        Map<Integer, ServerTicket> userTickets = tickets.get(userId);
+        if (userTickets != null && userTickets.containsKey(ticket.getDay())) {
+            throw new TicketAlreadyExistsException();
+        }
 
         tickets.putIfAbsent(ticket.getUserId(), new ConcurrentHashMap<>());
-
         // Podría solo tener el ticket type al final tal vez
         tickets.get(ticket.getUserId()).put(ticket.getDay(), ticket);
     }
 
     public AddSlotResponse addSlot(AddSlotRequest request) {
+        //Falla:
+        // si la atracción no existe
+        // si el día es inválido
+        // si la capacidad es negativa
+        // si ya se cargó una capacidad para esa atracción y día.
         ServerAttraction attraction = attractions.get(request.getAttractionName());
 
         if (attraction == null) {
-            return null;
+            throw new AttractionNotExistException();
+        }
+        if(request.getCapacity() < 0){
+            throw new NegativeCapacityException();
         }
 
         DayCapacity dayCapacity = getDayCapacity(attraction, request.getDay());
 
         if (dayCapacity.getCapacity() != null) {
-            // Ya agregamos la capacidad
-            return null;
+            throw new CapacityAlreadyAssignedException();
         }
 
         dayCapacity.setCapacity(request.getCapacity());
@@ -87,11 +92,13 @@ public class ParkData {
     private AddSlotResponse reorganizeBookings(ServerAttraction attraction, DayCapacity capacity) {
         Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> attractionBookings = bookings.get(attraction);
 
+        //TODO Esto no deberia pasar, pq ya chequeamos antes que la atraccion no sea null no?
         if (attractionBookings == null) {
             return null;
         }
 
         Map<LocalTime, List<ServerBooking>> capacityBookings = attractionBookings.get(capacity);
+        //TODO Aca no pasa algo parecido? hace falta ver essto?
         if (capacityBookings == null) {
             return null;
         }
@@ -154,14 +161,21 @@ public class ParkData {
      * BookingService methods
      **/
     public boolean book(ServerBooking booking) {
+        //Falla:
+        // si la reserva ya existe
+        // si no se puede reservar la atracción según las restricciones del tipo de pase
+        // si no existe una atracción con ese nombre --
+        // si el día es inválido --
+        // si el slot es inválido --
+        // si no cuenta con un pase válido para ese día
         ServerAttraction attraction = attractions.get(booking.getAttractionName());
 
         if (attraction == null) {
-            return false;
+            throw new AttractionNotExistException();
         }
 
         if (!attraction.isTimeSlotValid(booking.getSlot())) {
-            return false;
+            throw new InvalidSlotException();
         }
 
         ServerTicket ticket = tickets.getOrDefault(booking.getUserId(), new HashMap<>()).getOrDefault(booking.getDay(), null);
@@ -210,6 +224,9 @@ public class ParkData {
 
     public List<AvailabilityResponse> getAvailability(String attractionName, int day, LocalTime startTime, LocalTime endTime){
         ServerAttraction attraction = attractions.get(attractionName);
+        if (attraction == null) {
+            throw new AttractionNotExistException();
+        }
 
         List<LocalTime> timeSlotsInRange = attraction.getSlotsInRange(startTime, endTime);
         List<AvailabilityResponse> responses = new ArrayList<>();
@@ -223,12 +240,14 @@ public class ParkData {
 
     public AvailabilityResponse getAvailability(String attractionName, int day, LocalTime slot){
         ServerAttraction attraction = attractions.get(attractionName);
+        if (attraction == null) {
+            throw new AttractionNotExistException();
+        }
 
         DayCapacity dayCapacity = getDayCapacity(attraction, day);
 
         AtomicInteger confirmed = new AtomicInteger(0);
         AtomicInteger pending = new AtomicInteger(0);
-
 
         bookings.get(attraction).get(dayCapacity).get(slot)
                 .forEach(booking -> {
@@ -250,26 +269,37 @@ public class ParkData {
     }
 
     public boolean confirmBooking(ServerBooking booking) {
+        //Falla
+        // si no se cargó la capacidad de los slots de la atracción para ese día --
+        // si la reserva ya está confirmada
+        // si no existe una reserva realizada para la atracción con ese pase
+        // si no existe una atracción con ese nombre --
+        // si el día es inválido --
+        // si el slot es inválido
+        // si no cuenta con un pase válido para ese día.
+
         ServerAttraction attraction = attractions.get(booking.getAttractionName());
 
         if (attraction == null) {
-            return false;
+            throw new AttractionNotExistException();
         }
 
         DayCapacity dayCapacityAux = getDayCapacity(attraction, booking.getDay());
 
         if (dayCapacityAux.getCapacity() == null){
-            return false;
+            throw new CapacityNotAssignedException();
         }
 
         Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> dayMap = bookings.get(attraction);
 
+        //TODO puede pasar esto ?
         if (dayMap == null) {
             return false;
         }
 
         Map<LocalTime, List<ServerBooking>> timeMap = bookings.get(attraction).get(dayCapacityAux);
 
+        //TODO puede pasar esto ?
         if (timeMap == null) {
             return false;
         }
@@ -287,22 +317,30 @@ public class ParkData {
     }
 
     public boolean cancelBooking(ServerBooking booking) {
+        //Falla:
+        // si no existe una reserva realizada para la atracción con ese pase
+        // si no existe una atracción con ese nombre --
+        // si el día es inválido --
+        // si el slot es inválido
+        // si no cuenta con un pase válido para ese día.
         ServerAttraction attraction = attractions.get(booking.getAttractionName());
 
         if (attraction == null) {
-            return false;
+            throw new AttractionNotExistException();
         }
 
         DayCapacity dayCapacityAux = new DayCapacity(booking.getDay());
 
         Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> dayMap = bookings.get(attraction);
 
+        //TODO puede pasar esto ?
         if (dayMap == null) {
             return false;
         }
 
         Map<LocalTime, List<ServerBooking>> timeMap = bookings.get(attraction).get(dayCapacityAux);
 
+        //TODO puede pasar esto ?
         if (timeMap == null) {
             return false;
         }

@@ -2,12 +2,16 @@ package ar.edu.itba.pod.server.models;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import ar.edu.itba.pod.grpc.park_admin.*;
+import ar.edu.itba.pod.server.exceptions.SlotSizeNotEnoughException;
+import ar.edu.itba.pod.server.exceptions.InvalidTimeException;
+import ar.edu.itba.pod.server.exceptions.NegativeSlotSizeException;
 
 public class ServerAttraction {
     private final String attractionName;
@@ -27,8 +31,15 @@ public class ServerAttraction {
 
     public ServerAttraction(AddAttractionRequest attractionRequest) {
         this.attractionName = attractionRequest.getAttractionName();
-        this.openingTime = LocalTime.parse(attractionRequest.getOpeningTime(), formatter);
-        this.closingTime = LocalTime.parse(attractionRequest.getClosingTime(), formatter);
+        try {
+            this.openingTime = LocalTime.parse(attractionRequest.getOpeningTime(), formatter);
+            this.closingTime = LocalTime.parse(attractionRequest.getClosingTime(), formatter);
+        } catch (DateTimeParseException e) {
+            throw new InvalidTimeException();
+        }
+        if(attractionRequest.getSlotSize() <= 0){
+            throw new NegativeSlotSizeException();
+        }
         this.slotSize = attractionRequest.getSlotSize();
         addTimeSlots();
     }
@@ -51,8 +62,12 @@ public class ServerAttraction {
     private void addTimeSlots() {
         LocalTime aux = this.openingTime;
         while (aux.isBefore(this.closingTime)) {
-            timeSlots.add(aux);
+            this.timeSlots.add(aux);
             aux = aux.plusMinutes(this.slotSize);
+        }
+        //TODO check: falla si con los valores provistos no existe un slot posible
+        if(this.timeSlots.size() == 1){
+            throw new SlotSizeNotEnoughException();
         }
     }
 

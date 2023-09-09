@@ -1,9 +1,12 @@
 package ar.edu.itba.pod.server.models;
 
 import ar.edu.itba.pod.grpc.booking.BookRequest;
+import ar.edu.itba.pod.server.exceptions.InvalidDayException;
+import ar.edu.itba.pod.server.exceptions.InvalidTimeException;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -18,8 +21,15 @@ public class ServerBooking {
 
     public ServerBooking(BookRequest bookRequest) {
         this.attractionName = bookRequest.getAttractionName();
+        if(bookRequest.getDay() < 1 || bookRequest.getDay() > 365){
+            throw new InvalidDayException();
+        }
         this.day = bookRequest.getDay();
-        this.slot = LocalTime.parse(bookRequest.getTimeSlot(), formatter);
+        try {
+            this.slot = LocalTime.parse(bookRequest.getTimeSlot(), formatter);
+        } catch (DateTimeParseException e) {
+            throw new InvalidTimeException();
+        }
         this.userId = UUID.fromString(bookRequest.getUUID());
         this.isConfirmed = false;
         this.bookingTime = LocalTime.now();
