@@ -35,7 +35,7 @@ public class NotificationClient {
                 case UNFOLLOW -> new UnfollowAction().execute(params, channel);
             }
         } finally {
-            channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
+            channel.shutdown().awaitTermination(10000, TimeUnit.SECONDS);
         }
     }
 }

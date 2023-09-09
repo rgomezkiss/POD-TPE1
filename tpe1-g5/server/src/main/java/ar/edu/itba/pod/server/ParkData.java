@@ -1,6 +1,8 @@
 package ar.edu.itba.pod.server;
 
 import ar.edu.itba.pod.grpc.booking.AvailabilityResponse;
+import ar.edu.itba.pod.grpc.booking.GetAvailabilityResponse;
+import ar.edu.itba.pod.grpc.notification.NotificationRequest;
 import ar.edu.itba.pod.grpc.booking.GetAvailabilityRequest;
 import ar.edu.itba.pod.grpc.park_admin.AddSlotRequest;
 import ar.edu.itba.pod.grpc.park_admin.AddSlotResponse;
@@ -11,6 +13,8 @@ import ar.edu.itba.pod.server.models.DayCapacity;
 import ar.edu.itba.pod.server.models.ServerAttraction;
 import ar.edu.itba.pod.server.models.ServerBooking;
 import ar.edu.itba.pod.server.models.ServerTicket;
+import com.google.protobuf.StringValue;
+import io.grpc.stub.StreamObserver;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -40,9 +44,12 @@ public class ParkData {
     private final static String BOOKING_ALREADY_CONFIRMED = "Booking has been already confirmed";
     private final static String BOOKING_NOT_FOUND = "Booking not found";
 
+    //TODO: change to proper notifications...
+    private final Map<String, StreamObserver<StringValue>> observers = new ConcurrentHashMap<>();
     public Map<String, ServerAttraction> getAttractions() {
         return attractions;
     }
+
 
     /**
      * ParkAdminService methods
@@ -56,6 +63,7 @@ public class ParkData {
         if (attractions.containsKey(attraction.getAttractionName())) {
             throw new AlreadyExistsException(ATTRACTION_ALREADY_EXISTS);
         }
+
         attractions.put(attraction.getAttractionName(), attraction);
         bookings.put(attraction, new ConcurrentHashMap<>());
     }
@@ -177,6 +185,7 @@ public class ParkData {
         if (attraction == null) {
             throw new NotFoundException(ATTRACTION_NOT_FOUND);
         }
+
         if (!attraction.isTimeSlotValid(booking.getSlot())) {
             throw new InvalidException(INVALID_SLOT);
         }
@@ -468,5 +477,27 @@ public class ParkData {
 
         // TODO: ordenar
         return bookingsByDay;
+    }
+
+    /**
+     * NotificationService methods
+     **/
+    public void follow(NotificationRequest request, StreamObserver<StringValue> observer) {
+//        Falla si no existe una atracción con ese nombre,
+//        si el día es inválido,
+//        si no cuenta con un pase válido para ese día o
+//        si ya estaba registrado para ser notificado de esa atracción ese día
+
+        observers.put(request.getAttractionName(), observer);
+    }
+
+    public void unfollow(NotificationRequest request) {
+//        Falla si no existe una atracción con ese nombre,
+//        si el día es inválido,
+//        si no cuenta con un pase válido para ese día o
+//        si no estaba registrado para ser notificado de esa atracción ese día
+
+        observers.get(request.getAttractionName()).onCompleted();
+        observers.remove(request.getAttractionName());
     }
 }
