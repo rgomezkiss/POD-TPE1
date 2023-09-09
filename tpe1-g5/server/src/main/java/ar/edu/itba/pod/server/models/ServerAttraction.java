@@ -1,7 +1,6 @@
 package ar.edu.itba.pod.server.models;
 
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -9,6 +8,7 @@ import java.util.Set;
 
 import ar.edu.itba.pod.grpc.park_admin.*;
 import ar.edu.itba.pod.server.exceptions.InvalidException;
+import ar.edu.itba.pod.server.utils.CommonUtils;
 
 public class ServerAttraction {
     private final String attractionName;
@@ -16,27 +16,23 @@ public class ServerAttraction {
     private final LocalTime closingTime;
     private final int slotSize;
     private final Set<LocalTime> timeSlots = new HashSet<>();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 
     public ServerAttraction(AddAttractionRequest attractionRequest) {
         this.attractionName = attractionRequest.getAttractionName();
-        this.openingTime = LocalTime.parse(attractionRequest.getOpeningTime(), formatter);
-        this.closingTime = LocalTime.parse(attractionRequest.getClosingTime(), formatter);
+        this.openingTime = LocalTime.parse(attractionRequest.getOpeningTime(), CommonUtils.formatter);
+        this.closingTime = LocalTime.parse(attractionRequest.getClosingTime(), CommonUtils.formatter);
         this.slotSize = attractionRequest.getSlotSize();
         validateParameters();
         addTimeSlots();
     }
 
     private void validateParameters(){
-        if(this.closingTime.isBefore(this.openingTime)) {
-            throw new InvalidException("Invalid time");
-        }
+        CommonUtils.validateTimeRange(this.openingTime, this.closingTime);
         if(this.slotSize <= 0){
             throw new InvalidException("Slot size must be a positive number");
         }
         if(this.openingTime.plusMinutes(this.slotSize).isBefore(this.closingTime)){
             throw new InvalidException("Slot size not enough");
-
         }
     }
 
@@ -64,7 +60,7 @@ public class ServerAttraction {
     }
 
     public List<LocalTime> getSlotsInRange(LocalTime startTime, LocalTime endTime) {
-        List<LocalTime> validTimesInRange = new ArrayList<>();
+        final List<LocalTime> validTimesInRange = new ArrayList<>();
         LocalTime currentTime = openingTime;
 
         while (!currentTime.isAfter(closingTime)) {
@@ -85,7 +81,7 @@ public class ServerAttraction {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ServerAttraction other = (ServerAttraction) o;
+        final ServerAttraction other = (ServerAttraction) o;
         return this.attractionName.equals(other.attractionName);
     }
 

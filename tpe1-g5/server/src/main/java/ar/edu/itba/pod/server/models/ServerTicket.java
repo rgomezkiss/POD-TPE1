@@ -3,6 +3,7 @@ package ar.edu.itba.pod.server.models;
 import ar.edu.itba.pod.grpc.park_admin.AddTicketRequest;
 import ar.edu.itba.pod.grpc.park_admin.TicketType;
 import ar.edu.itba.pod.server.exceptions.InvalidException;
+import ar.edu.itba.pod.server.utils.CommonUtils;
 
 import java.time.LocalTime;
 import java.util.Objects;
@@ -23,13 +24,8 @@ public class ServerTicket {
             throw new InvalidException("Invalid ticket type");
         }
         this.bookings = 0;
-        validateParameters();
-    }
+        CommonUtils.validateDay(this.day);
 
-    private void validateParameters() {
-        if(this.day < 1 || this.day > 365){
-            throw new InvalidException("Invalid day");
-        }
     }
 
     public boolean canBook(LocalTime timeSlot) {
@@ -60,7 +56,6 @@ public class ServerTicket {
         this.bookings--;
     }
 
-    // TODO: chequear
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -69,7 +64,7 @@ public class ServerTicket {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ServerTicket other = (ServerTicket) o;
+        final ServerTicket other = (ServerTicket) o;
         return this.userId.equals(other.userId) && this.day == other.day;
     }
 
