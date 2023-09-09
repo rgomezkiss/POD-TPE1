@@ -17,8 +17,6 @@ public class ConsultParser {
     private final static String DAY = "Dday";
     private final static String PATH = "DoutPath";
     private final static String VISITOR = "Dvisitor";
-    private final static int MIN_DAY = 1;
-    private final static int MAX_DAY = 365;
 
     public ConsultParser() {
         options.addRequiredOption(SERVER_ADDRESS, SERVER_ADDRESS, true, "Admin server address");
@@ -53,11 +51,6 @@ public class ConsultParser {
 
             if (cmd.hasOption(DAY)) {
                 day = Integer.parseInt(cmd.getOptionValue(DAY));
-                if (day < MIN_DAY || day > MAX_DAY) {
-                    System.out.println("Invalid day");
-                    logger.error("Invalid day");
-                    return null;
-                }
             } else {
                 System.out.println("Day is required for this action");
                 logger.error("Day is required for this action");
@@ -67,8 +60,8 @@ public class ConsultParser {
             if (cmd.hasOption(PATH)) {
                 outPath = cmd.getOptionValue(PATH);
             } else {
-                System.out.println("Day is required for this action");
-                logger.error("Day is required for this action");
+                System.out.println("Path is required for this action");
+                logger.error("Path is required for this action");
                 return null;
             }
 

@@ -16,8 +16,6 @@ public class NotificationParser {
     private final static String DAY = "Dday";
     private final static String RIDE = "Dride";
     private final static String VISITOR = "Dvisitor";
-    private final static int MIN_DAY = 1;
-    private final static int MAX_DAY = 365;
 
     public NotificationParser() {
         options.addRequiredOption(SERVER_ADDRESS, SERVER_ADDRESS, true, "Admin server address");
@@ -53,11 +51,6 @@ public class NotificationParser {
 
             if (cmd.hasOption(DAY)) {
                 day = Integer.parseInt(cmd.getOptionValue(DAY));
-                if (day < MIN_DAY || day > MAX_DAY) {
-                    System.out.println("Invalid day");
-                    logger.error("Invalid day");
-                    return null;
-                }
             } else {
                 System.out.println("Day is required for this action");
                 logger.error("Day is required for this action");

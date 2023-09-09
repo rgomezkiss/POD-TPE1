@@ -20,8 +20,6 @@ public class AdminParser {
     private final static String RIDE = "Dride";
     private final static String DAY = "Dday";
     private final static String CAPACITY = "Dcapacity";
-    private final static int MIN_DAY = 1;
-    private final static int MAX_DAY = 365;
 
     public AdminParser() {
         options.addRequiredOption(SERVER_ADDRESS, SERVER_ADDRESS, true, "Admin server address");
@@ -89,10 +87,6 @@ public class AdminParser {
 
                     if (cmd.hasOption(DAY)) {
                         day = Integer.parseInt(cmd.getOptionValue(DAY));
-                        if (day < MIN_DAY || day > MAX_DAY) {
-                            System.out.println("Invalid day");
-                            return null;
-                        }
                     } else {
                         System.out.println("Day is required for this action");
                         logger.error("Day is required for this action");
@@ -101,10 +95,6 @@ public class AdminParser {
 
                     if (cmd.hasOption(CAPACITY)) {
                         capacity = Integer.parseInt(cmd.getOptionValue(CAPACITY));
-                        if (capacity < 0) {
-                            System.out.println("Invalid capacity");
-                            return null;
-                        }
                     } else {
                         System.out.println("Capacity is required for this action");
                         logger.error("Capacity is required for this action");

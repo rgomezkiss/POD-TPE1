@@ -23,16 +23,15 @@ message AddAttractionRequest {
 
 message AddTicketRequest {
   string UUID = 1;
-  TicketType ticketType = 2;
+  string ticketType = 2;
   int32 ticketDay = 3;
 }
 
 enum TicketType {
-    //TODO me parece que aca el enum 0 tenia que ser UNKNOWN
-    //pq en la teorica dijeron q siempre el primer enum es algo raro
-    UNLIMITED = 0;
-    THREE = 1;
-    HALF_DAY = 2;
+    UNKNOWN = 0;
+    UNLIMITED = 1;
+    THREE = 2;
+    HALF_DAY = 3;
 }
 
 message AddSlotRequest {

@@ -2,24 +2,18 @@ package ar.edu.itba.pod.server.services;
 
 import ar.edu.itba.pod.grpc.booking.*;
 import ar.edu.itba.pod.server.ParkData;
-import ar.edu.itba.pod.server.exceptions.InvalidTimeException;
+import ar.edu.itba.pod.server.exceptions.InvalidException;
 import ar.edu.itba.pod.server.models.ServerAttraction;
 import ar.edu.itba.pod.server.models.ServerBooking;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
     private final ParkData parkData;
-
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 
     public BookingService(ParkData parkData) {
         this.parkData = parkData;
@@ -46,35 +40,9 @@ public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
 
     @Override
     public void getAvailability(GetAvailabilityRequest request, StreamObserver<GetAvailabilityResponse> responseObserver) {
-        //Falla
-        // si no existe una atracción con ese nombre --
-        // si el día es inválido --
-        // si el slot o rango de slot es inválido --
-
-        LocalTime startTime;
-        LocalTime endTime;
-        try {
-            startTime = LocalTime.parse(request.getTimeRangeStart(), formatter);
-            endTime = LocalTime.parse(request.getTimeRangeEnd(), formatter);
-        } catch (DateTimeParseException e) {
-            throw new InvalidTimeException();
-        }
-
-        List<AvailabilityResponse> availabilityResponses = new LinkedList<>();
-
-
-        if (request.getAttractionName().isEmpty()){
-            availabilityResponses.addAll(parkData.getAvailability(request.getDay(), startTime, endTime));
-        }
-        else if (request.getTimeRangeEnd().isEmpty()){
-            availabilityResponses.add(parkData.getAvailability(request.getAttractionName(), request.getDay(), startTime));
-        }
-        else {
-            availabilityResponses.addAll(parkData.getAvailability(request.getAttractionName(), request.getDay(), startTime, endTime));
-        }
-
-        GetAvailabilityResponse response = GetAvailabilityResponse.newBuilder().addAllAvailabilityResponses(availabilityResponses).build();
-
+        GetAvailabilityResponse response = GetAvailabilityResponse.newBuilder()
+                .addAllAvailabilityResponses(parkData.getAvailability(request))
+                .build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
