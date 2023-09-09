@@ -10,29 +10,27 @@ import io.grpc.stub.StreamObserver;
 public class ParkAdminService extends ParkAdminServiceGrpc.ParkAdminServiceImplBase {
     private final ParkData parkData;
 
-    public ParkAdminService(ParkData parkData) {
+    public ParkAdminService(final ParkData parkData) {
         this.parkData = parkData;
     }
 
     @Override
-    public void addAttraction(AddAttractionRequest attraction, StreamObserver<Empty> responseObserver) {
+    public void addAttraction(final AddAttractionRequest attraction, final StreamObserver<Empty> responseObserver) {
         parkData.addAttraction(new ServerAttraction(attraction));
-        Empty response = Empty.newBuilder().build();
-        responseObserver.onNext(response);
+        responseObserver.onNext(Empty.newBuilder().build());
         responseObserver.onCompleted();
     }
 
     @Override
-    public void addTicket(AddTicketRequest ticket, StreamObserver<Empty> responseObserver) {
+    public void addTicket(final AddTicketRequest ticket, final StreamObserver<Empty> responseObserver) {
         parkData.addTicket(new ServerTicket(ticket));
-        Empty response = Empty.newBuilder().build();
-        responseObserver.onNext(response);
+        responseObserver.onNext(Empty.newBuilder().build());
         responseObserver.onCompleted();
     }
 
     @Override
-    public void addSlot(AddSlotRequest request, StreamObserver<AddSlotResponse> responseObserver) {
-        AddSlotResponse response = parkData.addSlot(request);
+    public void addSlot(final AddSlotRequest request, final StreamObserver<AddSlotResponse> responseObserver) {
+        final AddSlotResponse response = parkData.addSlot(request);
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }

@@ -2,7 +2,6 @@ package ar.edu.itba.pod.server.services;
 
 import ar.edu.itba.pod.grpc.booking.*;
 import ar.edu.itba.pod.server.ParkData;
-import ar.edu.itba.pod.server.exceptions.InvalidException;
 import ar.edu.itba.pod.server.models.ServerAttraction;
 import ar.edu.itba.pod.server.models.ServerBooking;
 import com.google.protobuf.Empty;
@@ -15,16 +14,16 @@ import java.util.stream.Collectors;
 public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
     private final ParkData parkData;
 
-    public BookingService(ParkData parkData) {
+    public BookingService(final ParkData parkData) {
         this.parkData = parkData;
     }
 
     @Override
-    public void getAttractions(Empty request, StreamObserver<GetAttractionsResponse> responseObserver) {
-        List<ServerAttraction> attractionList = new ArrayList<>(parkData.getAttractions().values());
+    public void getAttractions(final Empty request, final StreamObserver<GetAttractionsResponse> responseObserver) {
+        final List<ServerAttraction> attractionList = new ArrayList<>(parkData.getAttractions().values());
 
         // TODO: ver si debería ordenarse
-        GetAttractionsResponse response = GetAttractionsResponse.newBuilder()
+        final GetAttractionsResponse response = GetAttractionsResponse.newBuilder()
                 .addAllAttractions(attractionList.stream()
                 .map(attraction -> AttractionResponse.newBuilder()
                         .setAttractionName(attraction.getAttractionName())
@@ -39,40 +38,31 @@ public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
     }
 
     @Override
-    public void getAvailability(GetAvailabilityRequest request, StreamObserver<GetAvailabilityResponse> responseObserver) {
-        GetAvailabilityResponse response = GetAvailabilityResponse.newBuilder()
-                .addAllAvailabilityResponses(parkData.getAvailability(request))
-                .build();
+    public void getAvailability(final GetAvailabilityRequest request, final StreamObserver<GetAvailabilityResponse> responseObserver) {
+        final List<AvailabilityResponse> attractionList = parkData.getAvailability(request);
+        final GetAvailabilityResponse response = GetAvailabilityResponse.newBuilder().addAllAvailabilityResponses(attractionList).build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
-    // TODO: podría devolverse únicamente Empty y que los errores se catcheen por el interceptor
     @Override
-    public void book(BookRequest request, StreamObserver<Empty> responseObserver) {
+    public void book(final BookRequest request, final StreamObserver<Empty> responseObserver) {
         parkData.book(new ServerBooking(request));
-        Empty response = Empty.newBuilder().build();
-        responseObserver.onNext(response);
+        responseObserver.onNext(Empty.newBuilder().build());
         responseObserver.onCompleted();
     }
 
     @Override
-    public void confirmBooking(BookRequest request, StreamObserver<Empty> responseObserver) {
+    public void confirmBooking(final BookRequest request, final StreamObserver<Empty> responseObserver) {
         parkData.confirmBooking(new ServerBooking(request));
-        Empty response = Empty.newBuilder().build();
-        responseObserver.onNext(response);
+        responseObserver.onNext(Empty.newBuilder().build());
         responseObserver.onCompleted();
     }
 
     @Override
-    public void cancelBooking(BookRequest request, StreamObserver<Empty> responseObserver) {
+    public void cancelBooking(final BookRequest request, final StreamObserver<Empty> responseObserver) {
         parkData.cancelBooking(new ServerBooking(request));
-        Empty response = Empty.newBuilder().build();
-        responseObserver.onNext(response);
+        responseObserver.onNext(Empty.newBuilder().build());
         responseObserver.onCompleted();
-    }
-
-    public ParkData getParkData() {
-        return parkData;
     }
 }

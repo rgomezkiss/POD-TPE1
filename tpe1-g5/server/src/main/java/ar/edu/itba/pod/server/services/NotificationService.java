@@ -8,17 +8,18 @@ import io.grpc.stub.StreamObserver;
 public class NotificationService extends NotificationServiceGrpc.NotificationServiceImplBase{
     private final ParkData parkData;
 
-    public NotificationService(ParkData parkData) {
+    public NotificationService(final ParkData parkData) {
         this.parkData = parkData;
     }
 
     @Override
-    public void follow(NotificationRequest request, StreamObserver<StringValue> responseObserver) {
+    public void follow(final NotificationRequest request, final StreamObserver<StringValue> responseObserver) {
         parkData.follow(request, responseObserver);
+        //TODO
     }
 
     @Override
-    public void unfollow(NotificationRequest request, StreamObserver<StringValue> responseObserver) {
+    public void unfollow(final NotificationRequest request, final StreamObserver<StringValue> responseObserver) {
         parkData.unfollow(request);
         responseObserver.onNext(StringValue.newBuilder().setValue("Cancelled subscription").build());
         responseObserver.onCompleted();

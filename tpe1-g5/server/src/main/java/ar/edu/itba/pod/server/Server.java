@@ -4,7 +4,6 @@ import ar.edu.itba.pod.server.interceptor.GlobalExceptionHandlerInterceptor;
 import ar.edu.itba.pod.server.services.BookingService;
 import ar.edu.itba.pod.server.services.ConsultService;
 import ar.edu.itba.pod.server.services.NotificationService;
-import ar.edu.itba.pod.server.services.NotificationService;
 import ar.edu.itba.pod.server.services.ParkAdminService;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptors;
@@ -20,9 +19,9 @@ public class Server {
     public static void main(String[] args) throws InterruptedException, IOException {
         logger.info("Server Starting ...");
 
-        ParkData parkData = new ParkData();
+        final ParkData parkData = new ParkData();
 
-        io.grpc.Server server = ServerBuilder
+        final io.grpc.Server server = ServerBuilder
                 .forPort(port)
                 .addService(ServerInterceptors.intercept(new ParkAdminService(parkData), new GlobalExceptionHandlerInterceptor()))
                 .addService(ServerInterceptors.intercept(new ConsultService(parkData), new GlobalExceptionHandlerInterceptor()))
