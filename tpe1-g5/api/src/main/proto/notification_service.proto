@@ -5,4 +5,15 @@ package notification;
 option java_package = "ar.edu.itba.pod.grpc.notification";
 option java_multiple_files = true;
 
-//TODO
+import "google/protobuf/wrappers.proto";
+
+service NotificationService {
+  rpc Follow(NotificationRequest) returns (stream google.protobuf.StringValue);
+  rpc Unfollow(NotificationRequest) returns (google.protobuf.StringValue);
+}
+
+message NotificationRequest {
+  string attractionName = 1;
+  string UUID = 2;
+  uint32 day = 3;
+}
