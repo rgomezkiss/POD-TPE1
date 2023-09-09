@@ -1,45 +1,45 @@
-package ar.edu.itba.pod.server.models;
-
-import ar.edu.itba.pod.server.exceptions.InvalidException;
-
-// Clase para modelar la capacidad para cierto día, aún sin finalizar
-public class DayCapacity {
-    private final Integer day;
-    private Integer capacity;
-
-    public DayCapacity(Integer day) {
-        this.day = day;
-        this.capacity = null;
-        validateParameters();
-    }
-
-    private void validateParameters() {
-        if(this.day < 1 || this.day > 365){
-            throw new InvalidException("Invalid day");
-        }
-    }
-
-    public Integer getCapacity() {
-        return capacity;
-    }
-    public void setCapacity(Integer capacity) {
-        this.capacity = capacity;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        DayCapacity other = (DayCapacity) o;
-        return this.day.equals(other.day);
-    }
-
-    @Override
-    public int hashCode() {
-        return day.hashCode();
-    }
-}
+//package ar.edu.itba.pod.server.models;
+//
+//import ar.edu.itba.pod.server.exceptions.InvalidException;
+//
+//// Clase para modelar la capacidad para cierto día, aún sin finalizar
+//public class DayCapacity {
+//    private final Integer day;
+//    private Integer capacity;
+//
+//    public DayCapacity(Integer day) {
+//        this.day = day;
+//        this.capacity = null;
+//        validateParameters();
+//    }
+//
+//    private void validateParameters() {
+//        if(this.day < 1 || this.day > 365){
+//            throw new InvalidException("Invalid day");
+//        }
+//    }
+//
+//    public Integer getCapacity() {
+//        return capacity;
+//    }
+//    public void setCapacity(Integer capacity) {
+//        this.capacity = capacity;
+//    }
+//
+//    @Override
+//    public boolean equals(Object o) {
+//        if (this == o) {
+//            return true;
+//        }
+//        if (o == null || getClass() != o.getClass()) {
+//            return false;
+//        }
+//        DayCapacity other = (DayCapacity) o;
+//        return this.day.equals(other.day);
+//    }
+//
+//    @Override
+//    public int hashCode() {
+//        return day.hashCode();
+//    }
+//}

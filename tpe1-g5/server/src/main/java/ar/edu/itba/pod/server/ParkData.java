@@ -9,7 +9,7 @@ import ar.edu.itba.pod.grpc.park_admin.AddSlotResponse;
 import ar.edu.itba.pod.grpc.park_consult.BookingResponse;
 import ar.edu.itba.pod.grpc.park_consult.SuggestedCapacity;
 import ar.edu.itba.pod.server.exceptions.*;
-import ar.edu.itba.pod.server.models.DayCapacity;
+//import ar.edu.itba.pod.server.models.DayCapacity;
 import ar.edu.itba.pod.server.models.ServerAttraction;
 import ar.edu.itba.pod.server.models.ServerBooking;
 import ar.edu.itba.pod.server.models.ServerTicket;
@@ -23,8 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ParkData {
-    // Attraction -> Day/Capacity -> TimeSlot -> List<Book>
-    private final Map<ServerAttraction, Map<DayCapacity, Map<LocalTime, List<ServerBooking>>>> bookings = new ConcurrentHashMap<>();
+    // Attraction -> Day -> TimeSlot -> List<Book>
+    private final Map<ServerAttraction, Map<Integer, Map<LocalTime, List<ServerBooking>>>> bookings = new ConcurrentHashMap<>();
+    // Attraction -> Day -> Capacity
+    private final Map<ServerAttraction, Map<Integer, Integer>> capacities = new ConcurrentHashMap<>();
     //AttractionName -> ServerAttraction
     private final Map<String, ServerAttraction> attractions = new ConcurrentHashMap<>();
     //UserId -> Day -> Ticket
@@ -66,6 +68,7 @@ public class ParkData {
 
         attractions.put(attraction.getAttractionName(), attraction);
         bookings.put(attraction, new ConcurrentHashMap<>());
+        capacities.put(attraction, new ConcurrentHashMap<>());
     }
 
     public void addTicket(final ServerTicket ticket) {
@@ -99,20 +102,18 @@ public class ParkData {
             throw new InvalidException(NEGATIVE_CAPACITY);
         }
 
-        final DayCapacity dayCapacity = getDayCapacity(attraction, request.getDay());
+        final Integer capacity = getDayCapacity(attraction, request.getDay());
 
-        if (dayCapacity.getCapacity() != null) {
+        if (capacity != null) {
             throw new AlreadyExistsException(CAPACITY_ALREADY_ASSIGNED);
         }
 
-        dayCapacity.setCapacity(request.getCapacity());
-
-        return reorganizeBookings(attraction, dayCapacity);
+        return reorganizeBookings(attraction, request.getDay(), request.getCapacity());
     }
 
-    private AddSlotResponse reorganizeBookings(final ServerAttraction attraction, final DayCapacity capacity) {
-        final Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> attractionBookings = bookings.get(attraction);
-        final Map<LocalTime, List<ServerBooking>> capacityBookings = attractionBookings.getOrDefault(capacity, new ConcurrentHashMap<>());
+    private AddSlotResponse reorganizeBookings(final ServerAttraction attraction, final Integer day, final Integer capacity) {
+        final Map<Integer, Map<LocalTime, List<ServerBooking>>> attractionBookings = bookings.get(attraction);
+        final Map<LocalTime, List<ServerBooking>> capacityBookings = attractionBookings.getOrDefault(day, new ConcurrentHashMap<>());
         final List<ServerBooking> toMove = new ArrayList<>();
 
         int confirmed = 0;
@@ -124,24 +125,24 @@ public class ParkData {
             final List<ServerBooking> reservations = entry.getValue();
 
             // Confirmamos todas las que se puedan
-            for (int i = 0; i < capacity.getCapacity(); i++) {
+            for (int i = 0; i < capacity; i++) {
                 reservations.get(i).setConfirmed(true);
                 confirmed++;
                 //TODO: notificar que se confirmo o cargo cap
             }
 
             // Agregamos las excedentes a la lista de reservas a mover
-            for (int i = capacity.getCapacity(); i < reservations.size(); i++) {
+            for (int i = capacity; i < reservations.size(); i++) {
                 //Cambiar por una queue para que se haga en una sola operación
                 toMove.add(reservations.get(i));
                 //reservations.remove(reservations.get(i));
             }
-            reservations.subList(capacity.getCapacity(), reservations.size()).clear();
+            reservations.subList(capacity, reservations.size()).clear();
         }
 
         // Reasignamos las reservas excedentes
         for (ServerBooking booking : toMove) {
-            final LocalTime nextAvailableTime = getNextAvailableTime(capacityBookings, booking.getSlot(), attraction, capacity.getCapacity());
+            final LocalTime nextAvailableTime = getNextAvailableTime(capacityBookings, booking.getSlot(), attraction, capacity);
 
             if (nextAvailableTime != null) {
                 capacityBookings.putIfAbsent(nextAvailableTime, new ArrayList<>());
@@ -159,7 +160,8 @@ public class ParkData {
                 .build();
     }
 
-    private LocalTime getNextAvailableTime(final Map<LocalTime, List<ServerBooking>> capacityBookings, final LocalTime bookingTime, final ServerAttraction attraction, final Integer capacity) {
+    private LocalTime getNextAvailableTime(final Map<LocalTime, List<ServerBooking>> capacityBookings, final LocalTime bookingTime,
+                                           final ServerAttraction attraction, final Integer capacity) {
         LocalTime nextTime = bookingTime.plusMinutes(attraction.getSlotSize());
         while (capacityBookings.getOrDefault(nextTime, new ArrayList<>()).size() >= capacity && nextTime.isBefore(attraction.getClosingTime())) {
             nextTime = nextTime.plusMinutes(attraction.getSlotSize());
@@ -201,22 +203,20 @@ public class ParkData {
         // Si el usuario tiene un ticket asociado al día, y puede reservar en ese momento
         if (ticket.canBook(booking.getSlot())) {
             // Guardo el día y su capacity asociada. Si no estuviera se devuelve un nuevo dayCapacity con capacity == null
-            final DayCapacity dayCapacity = getDayCapacity(attraction, booking.getDay());
+            final int day = booking.getDay();
+            final Integer capacity = getDayCapacity(attraction, day);
             // Agrego día del año si no estuviera. Se agrega con capacity == null
-            bookings.get(attraction).putIfAbsent(dayCapacity, new ConcurrentHashMap<>());
+            bookings.get(attraction).putIfAbsent(day, new ConcurrentHashMap<>());
             // Agrego hora del año sabiendo que es válida
-            final List<ServerBooking> serverBookingList = bookings
-                    .get(attraction)
-                    .get(dayCapacity)
-                    .putIfAbsent(booking.getSlot(), new ArrayList<>());
+            final List<ServerBooking> books = bookings.get(attraction).get(day).getOrDefault(booking.getSlot(), new ArrayList<>());
 
             // Si la capacidad ya esta cargada, entonces agrego y confirmo si hay lugar, modificando el confirmed
-            if (dayCapacity.getCapacity() != null) {
-                if (serverBookingList.size() < dayCapacity.getCapacity()) {
-                    if (bookings.get(attraction).get(dayCapacity).get(booking.getSlot()).contains(booking)) {
+            if (capacity != null) {
+                if (books.size() < capacity) {
+                    if (books.contains(booking)) {
                         throw new AlreadyExistsException(BOOKING_ALREADY_EXISTS);
                     }
-                    bookings.get(attraction).get(dayCapacity).get(booking.getSlot()).add(booking);
+                    books.add(booking);
                     booking.setConfirmed(true);
                     ticket.book();
                 }
@@ -224,7 +224,7 @@ public class ParkData {
             }
             // Sino, agrego sin modificar el confirmed
             else {
-                bookings.get(attraction).get(dayCapacity).get(booking.getSlot()).add(booking);
+                books.add(booking);
                 ticket.book();
             }
         }
@@ -290,11 +290,11 @@ public class ParkData {
             throw new NotFoundException(ATTRACTION_NOT_FOUND);
         }
 
-        final DayCapacity dayCapacity = getDayCapacity(attraction, day);
+        final Integer capacity = getDayCapacity(attraction, day);
         final AtomicInteger confirmed = new AtomicInteger(0);
         final AtomicInteger pending = new AtomicInteger(0);
 
-        bookings.get(attraction).get(dayCapacity).get(slot).forEach(booking -> {
+        bookings.get(attraction).get(day).get(slot).forEach(booking -> {
             if (booking.isConfirmed()) {
                 confirmed.getAndIncrement();
             } else {
@@ -306,7 +306,7 @@ public class ParkData {
                 .setAttractionName(attractionName)
                 .setConfirmed(confirmed.get())
                 .setPending(pending.get())
-                .setCapacity(dayCapacity.getCapacity())
+                .setCapacity(capacity)
                 .setSlot(slot.toString())
                 .build();
     }
@@ -326,8 +326,8 @@ public class ParkData {
             throw new NotFoundException(ATTRACTION_NOT_FOUND);
         }
 
-        final DayCapacity dayCapacityAux = getDayCapacity(attraction, booking.getDay());
-        if (dayCapacityAux.getCapacity() == null) {
+        final Integer capacity = getDayCapacity(attraction, booking.getDay());
+        if (capacity == null) {
             throw new NotFoundException(CAPACITY_NOT_ASSIGNED);
         }
 
@@ -339,7 +339,7 @@ public class ParkData {
 
         Optional<ServerBooking> toConfirmBook = bookings
                 .get(attraction)
-                .get(dayCapacityAux)
+                .get(booking.getDay())
                 .getOrDefault(booking.getSlot(), new ArrayList<>())
                 .stream()
                 .filter(toFind -> toFind.equals(booking))
@@ -368,7 +368,6 @@ public class ParkData {
             throw new NotFoundException(ATTRACTION_NOT_FOUND);
         }
 
-        final DayCapacity dayCapacityAux = new DayCapacity(booking.getDay());
         // TODO CHECK
         final ServerTicket ticket = tickets.getOrDefault(booking.getUserId(), new HashMap<>()).getOrDefault(booking.getDay(), null);
         if (ticket == null) {
@@ -376,7 +375,7 @@ public class ParkData {
         }
 
         // Elimino la reserva si existía, y sino ya vuelvo
-        if (bookings.get(attraction).get(dayCapacityAux).getOrDefault(booking.getSlot(), new ArrayList<>()).remove(booking)) {
+        if (bookings.get(attraction).get(booking.getDay()).getOrDefault(booking.getSlot(), new ArrayList<>()).remove(booking)) {
             ticket.cancelBook();
         }
         // No existía la reserva
@@ -385,13 +384,14 @@ public class ParkData {
 
     // Función que devuelve la clave dayCapacity asociada a una atracción en cierto día.
     // Si no existe la devuelve con una nueva instancia de DayCapacity con el valor capacity en null
-    private DayCapacity getDayCapacity(final ServerAttraction attraction, final int day) {
-        final DayCapacity dayCapacityAux = new DayCapacity(day);
-
-        return bookings.get(attraction)
-                .keySet().stream()
-                .filter(dayCapacityMap -> dayCapacityMap.equals(dayCapacityAux))
-                .findFirst().orElse(dayCapacityAux);
+    private Integer getDayCapacity(final ServerAttraction attraction, final int day) {
+//        final DayCapacity dayCapacityAux = new DayCapacity(day);
+//
+//        return bookings.get(attraction)
+//                .keySet().stream()
+//                .filter(dayCapacityMap -> dayCapacityMap.equals(dayCapacityAux))
+//                .findFirst().orElse(dayCapacityAux);
+        return capacities.getOrDefault(attraction, new ConcurrentHashMap<>()).getOrDefault(day, null);
     }
 
 
@@ -410,7 +410,8 @@ public class ParkData {
         final List<SuggestedCapacity> suggestedCapacities = new ArrayList<>();
 
         for (ServerAttraction attraction : attractions.values()) {
-            if (getDayCapacity(attraction, day).getCapacity() == null) {
+            final Integer capacity = getDayCapacity(attraction, day);
+            if (capacity == null) {
                 final  SuggestedCapacity aux = singleSuggestedCapacity(attraction, day);
                 if (aux != null) {
                     suggestedCapacities.add(aux);
@@ -423,15 +424,15 @@ public class ParkData {
     }
 
     private SuggestedCapacity singleSuggestedCapacity(final ServerAttraction attraction, final int day) {
-        final DayCapacity dayCapacity = getDayCapacity(attraction, day);
+        final Integer capacity = getDayCapacity(attraction, day);
 
-        if (dayCapacity != null) {
+        if (capacity != null) {
             return null;
         }
 
         //TODO chekc aca q onda con dayCapacity
         return Optional.ofNullable(bookings.get(attraction))
-                .map(reservationsByAttraction -> reservationsByAttraction.get(dayCapacity))
+                .map(reservationsByAttraction -> reservationsByAttraction.get(day))
                 .flatMap(reservationsByDay -> reservationsByDay
                         .entrySet().stream()
                         .max(Comparator.comparingInt(entry -> entry.getValue().size()))
@@ -454,11 +455,10 @@ public class ParkData {
         }
 
         final List<BookingResponse> bookingsByDay = new ArrayList<>();
-        final DayCapacity dayCapacity = new DayCapacity(day);
 
-        for (Map<DayCapacity, Map<LocalTime, List<ServerBooking>>> reservationsByDay : bookings.values()) {
-            if (reservationsByDay.containsKey(dayCapacity)) {
-                final Map<LocalTime, List<ServerBooking>> reservationsByTime = reservationsByDay.get(dayCapacity);
+        for (Map<Integer, Map<LocalTime, List<ServerBooking>>> reservationsByDay : bookings.values()) {
+            if (reservationsByDay.containsKey(day)) {
+                final Map<LocalTime, List<ServerBooking>> reservationsByTime = reservationsByDay.get(day);
                 reservationsByTime.values().forEach(bookingsAtTime ->
                         bookingsAtTime.forEach(booking -> {
                             if (booking.isConfirmed()) {
@@ -483,19 +483,21 @@ public class ParkData {
      * NotificationService methods
      **/
     public void follow(NotificationRequest request, StreamObserver<StringValue> observer) {
-//        Falla si no existe una atracción con ese nombre,
-//        si el día es inválido,
-//        si no cuenta con un pase válido para ese día o
-//        si ya estaba registrado para ser notificado de esa atracción ese día
+        //Falla:
+        // si no existe una atracción con ese nombre
+        // si el día es inválido
+        // si no cuenta con un pase válido para ese día
+        // si ya estaba registrado para ser notificado de esa atracción ese día
 
         observers.put(request.getAttractionName(), observer);
     }
 
     public void unfollow(NotificationRequest request) {
-//        Falla si no existe una atracción con ese nombre,
-//        si el día es inválido,
-//        si no cuenta con un pase válido para ese día o
-//        si no estaba registrado para ser notificado de esa atracción ese día
+        //Falla:
+        // si no existe una atracción con ese nombre
+        // si el día es inválido
+        // si no cuenta con un pase válido para ese día
+        // si no estaba registrado para ser notificado de esa atracción ese día
 
         observers.get(request.getAttractionName()).onCompleted();
         observers.remove(request.getAttractionName());

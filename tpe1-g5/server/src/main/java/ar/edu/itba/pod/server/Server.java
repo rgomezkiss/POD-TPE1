@@ -4,6 +4,7 @@ import ar.edu.itba.pod.server.interceptor.GlobalExceptionHandlerInterceptor;
 import ar.edu.itba.pod.server.services.BookingService;
 import ar.edu.itba.pod.server.services.ConsultService;
 import ar.edu.itba.pod.server.services.NotificationService;
+import ar.edu.itba.pod.server.services.NotificationService;
 import ar.edu.itba.pod.server.services.ParkAdminService;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptors;
@@ -24,9 +25,9 @@ public class Server {
         io.grpc.Server server = ServerBuilder
                 .forPort(port)
                 .addService(ServerInterceptors.intercept(new ParkAdminService(parkData), new GlobalExceptionHandlerInterceptor()))
-                .addService(new ConsultService(parkData))
-                .addService(new BookingService(parkData))
-                .addService(new NotificationService(parkData))
+                .addService(ServerInterceptors.intercept(new ConsultService(parkData), new GlobalExceptionHandlerInterceptor()))
+                .addService(ServerInterceptors.intercept(new BookingService(parkData), new GlobalExceptionHandlerInterceptor()))
+                .addService(ServerInterceptors.intercept(new NotificationService(parkData), new GlobalExceptionHandlerInterceptor()))
                 .build();
 
         server.start();
