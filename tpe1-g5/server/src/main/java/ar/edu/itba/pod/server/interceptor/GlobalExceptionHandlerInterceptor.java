@@ -47,7 +47,9 @@ public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
                 CapacityAlreadyAssignedException.class, Code.ALREADY_EXISTS,
                 NegativeCapacityException.class, Code.INVALID_ARGUMENT,
                 InvalidSlotException.class, Code.INVALID_ARGUMENT
-                //ADD CAPACITYT NOT ASSIGNED
+//                CapacityNotAssignedException.class, Code.INVALID_ARGUMENT
+//                ReservationAlreadyConfirmedException.class, Code.ALREADY_EXISTS
+//                ReservationNotExistException.class, Code.NOT_FOUND
         );
 
         private void handleException(RuntimeException exception, ServerCall<T, R> serverCall, Metadata headers) {

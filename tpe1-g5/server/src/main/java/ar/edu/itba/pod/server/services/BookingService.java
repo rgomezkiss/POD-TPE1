@@ -2,7 +2,6 @@ package ar.edu.itba.pod.server.services;
 
 import ar.edu.itba.pod.grpc.booking.*;
 import ar.edu.itba.pod.server.ParkData;
-import ar.edu.itba.pod.server.exceptions.InvalidDayException;
 import ar.edu.itba.pod.server.exceptions.InvalidTimeException;
 import ar.edu.itba.pod.server.models.ServerAttraction;
 import ar.edu.itba.pod.server.models.ServerBooking;
@@ -48,7 +47,7 @@ public class BookingService extends BookingServiceGrpc.BookingServiceImplBase {
     @Override
     public void getAvailability(GetAvailabilityRequest request, StreamObserver<GetAvailabilityResponse> responseObserver) {
         //Falla
-        // si no existe una atracción con ese nombre
+        // si no existe una atracción con ese nombre --
         // si el día es inválido --
         // si el slot o rango de slot es inválido --
 

@@ -205,7 +205,6 @@ public class ParkData {
                 bookings.get(attraction).get(dayCapacity).get(booking.getSlot()).add(booking);
                 ticket.book();
             }
-            return true;
         }
 
         return false;
@@ -271,8 +270,8 @@ public class ParkData {
     public boolean confirmBooking(ServerBooking booking) {
         //Falla
         // si no se cargó la capacidad de los slots de la atracción para ese día --
-        // si la reserva ya está confirmada
-        // si no existe una reserva realizada para la atracción con ese pase
+        // si la reserva ya está confirmada --
+        // si no existe una reserva realizada para la atracción con ese pase --
         // si no existe una atracción con ese nombre --
         // si el día es inválido --
         // si el slot es inválido
@@ -304,24 +303,31 @@ public class ParkData {
             return false;
         }
 
-        Optional<ServerBooking> toConfirmBook = bookings.get(attraction).get(dayCapacityAux).getOrDefault(booking.getSlot(), new ArrayList<>()).stream().filter(toFind -> toFind.equals(booking)).findFirst();
+        Optional<ServerBooking> toConfirmBook = bookings
+                .get(attraction)
+                .get(dayCapacityAux)
+                .getOrDefault(booking.getSlot(), new ArrayList<>())
+                .stream()
+                .filter(toFind -> toFind.equals(booking))
+                .findFirst();
 
         if (toConfirmBook.isPresent()) {
+            if(toConfirmBook.get().isConfirmed()) {
+                throw new ReservationAlreadyConfirmedException();
+            }
             // Confirmo la reserva
             toConfirmBook.get().setConfirmed(true);
-            return true;
         }
-
         // No existía la reserva
-        return false;
+        throw new ReservationNotExistException();
     }
 
     public boolean cancelBooking(ServerBooking booking) {
         //Falla:
-        // si no existe una reserva realizada para la atracción con ese pase
+        // si no existe una reserva realizada para la atracción con ese pase --
         // si no existe una atracción con ese nombre --
         // si el día es inválido --
-        // si el slot es inválido
+        // si el slot es inválido --
         // si no cuenta con un pase válido para ese día.
         ServerAttraction attraction = attractions.get(booking.getAttractionName());
 
@@ -350,9 +356,9 @@ public class ParkData {
         // Elimino la reserva si existía, y sino ya vuelvo
         if (bookings.get(attraction).get(dayCapacityAux).getOrDefault(booking.getSlot(), new ArrayList<>()).remove(booking)) {
             ticket.cancelBook();
-            return true;
         }
-        return false;
+        // No existía la reserva
+        throw new ReservationNotExistException();
     }
 
     // Función que devuelve la clave dayCapacity asociada a una atracción en cierto día.
