@@ -15,19 +15,19 @@ public class BookingClient {
     public static void main(String[] args) throws InterruptedException {
         logger.info("Booking Client Starting ...");
 
-        AbstractParams params = new BookingParser().parse(args);
+        final AbstractParams params = new BookingParser().parse(args);
 
         if (params == null) {
             return;
         }
 
-        ManagedChannel channel = ManagedChannelBuilder
+        final ManagedChannel channel = ManagedChannelBuilder
                 .forAddress(params.getServerAddress().getHost(), params.getServerAddress().getPort())
                 .usePlaintext()
                 .build();
 
         try {
-            switch ( BookingActions.valueOf(params.getAction())) {
+            switch (BookingActions.valueOf(params.getAction())) {
                 case ATTRACTIONS -> new AttractionsAction().execute(params, channel);
                 case AVAILABILITY -> new AvailabilityAction().execute(params, channel);
                 case BOOK -> new BookAction().execute(params, channel);

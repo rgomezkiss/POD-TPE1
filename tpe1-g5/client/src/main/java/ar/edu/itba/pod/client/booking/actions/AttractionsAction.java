@@ -6,13 +6,17 @@ import ar.edu.itba.pod.grpc.booking.BookingServiceGrpc;
 import ar.edu.itba.pod.grpc.booking.GetAttractionsResponse;
 import com.google.protobuf.Empty;
 import io.grpc.ManagedChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AttractionsAction implements Action {
-    @Override
-    public void execute(AbstractParams params, ManagedChannel channel) {
-        BookingServiceGrpc.BookingServiceBlockingStub blockingStub = BookingServiceGrpc.newBlockingStub(channel);
 
-        GetAttractionsResponse attractionsResponse = blockingStub.getAttractions(Empty.newBuilder().build());
+    private final static Logger logger = LoggerFactory.getLogger(AttractionsAction.class);
+
+    @Override
+    public void execute(final AbstractParams params, final ManagedChannel channel) {
+        final BookingServiceGrpc.BookingServiceBlockingStub blockingStub = BookingServiceGrpc.newBlockingStub(channel);
+        final GetAttractionsResponse attractionsResponse = blockingStub.getAttractions(Empty.newBuilder().build());
 
         System.out.println("Attraction | Open time | Close time");
         attractionsResponse.getAttractionsList().forEach((attractionResponse) ->

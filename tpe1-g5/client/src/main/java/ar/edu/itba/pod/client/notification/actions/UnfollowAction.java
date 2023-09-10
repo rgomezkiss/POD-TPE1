@@ -7,14 +7,19 @@ import ar.edu.itba.pod.grpc.notification.NotificationRequest;
 import ar.edu.itba.pod.grpc.notification.NotificationServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UnfollowAction implements Action {
+
+    private final static Logger logger = LoggerFactory.getLogger(UnfollowAction.class);
+
     @Override
-    public void execute(AbstractParams params, ManagedChannel channel) {
-        NotificationParams notificationParams = (NotificationParams) params;
+    public void execute(final AbstractParams params, final ManagedChannel channel) {
+        final NotificationParams notificationParams = (NotificationParams) params;
 
         try {
-            NotificationServiceGrpc.NotificationServiceBlockingStub blockingStub = NotificationServiceGrpc.newBlockingStub(channel);
+            final NotificationServiceGrpc.NotificationServiceBlockingStub blockingStub = NotificationServiceGrpc.newBlockingStub(channel);
 
             System.out.println(blockingStub.unfollow(NotificationRequest.newBuilder()
                     .setAttractionName(notificationParams.getRideName())
@@ -22,7 +27,7 @@ public class UnfollowAction implements Action {
                     .setUUID(notificationParams.getVisitorId())
                     .build()));
         } catch (StatusRuntimeException e) {
-
+            logger.error("{}: {}", e.getStatus().getCode().toString(), e.getMessage());
         }
     }
 }

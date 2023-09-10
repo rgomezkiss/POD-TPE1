@@ -18,9 +18,16 @@ Para compilar el proyecto, se debe ejecutar el siguiente comando en la raíz del
 mvn clean install
 ```
 
+Tras esto, en las carpetas /client/target y /server/target se generarán tp1-g5-client-1.0-SNAPSHOT-bin.tar.gz y tp1-g5-server-1.0-SNAPSHOT-bin.tar.gz
+Dichos .tar.gaz se deberán comprimir utilizando el siguiente comando:
+
+```bash
+tar -xzvf nombre-del-archivo.tar.gz
+```
+
 ## Ejecución
 
-...
+Una vez descomprimidos los .tar.gz anteriores, podremos ejecutar el siguiente servicio y clientes.
 
 ### Servicios
 
@@ -30,6 +37,10 @@ El sistema cuenta con los siguientes servicios remotos:
 - **Servicio de Reserva de Atracciones**.
 - **Servicio de Notificaciones de una Atracción**: recibe notificaciones respecto a los cambios en las reservas de una atracción del parque.
 - **Servicio de Consulta**: consulta las reservas pendientes y confirmadas de las atracciones.
+
+```sh
+./server.sh
+```
 
 ### Clientes
 

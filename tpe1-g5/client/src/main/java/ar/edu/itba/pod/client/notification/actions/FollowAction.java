@@ -9,49 +9,57 @@ import com.google.protobuf.StringValue;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
 public class FollowAction implements Action {
+
+    private final static Logger logger = LoggerFactory.getLogger(FollowAction.class);
+
     @Override
-    public void execute(AbstractParams params, ManagedChannel channel) {
-        NotificationParams notificationParams = (NotificationParams) params;
-
-        NotificationServiceGrpc.NotificationServiceStub stub = NotificationServiceGrpc.newStub(channel);
-        StreamObserver<StringValue> responseObserver = new StreamObserver<>() {
-            @Override
-            public void onNext(StringValue response) {
-                String notificationMessage = response.getValue();
-                System.out.println("Received notification: " + notificationMessage);
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                System.err.println("Error in communication: " + t.getMessage());
-            }
-
-            @Override
-            public void onCompleted() {
-                System.out.println("Notification stream completed.");
-            }
-        };
+    public void execute(final AbstractParams params, final ManagedChannel channel) {
+        final NotificationParams notificationParams = (NotificationParams) params;
+        final NotificationServiceGrpc.NotificationServiceStub stub = NotificationServiceGrpc.newStub(channel);
+        final StreamObserver<StringValue> responseObserver = new NotificationObserver();
 
         try {
             stub.follow(NotificationRequest.newBuilder()
                     .setAttractionName(notificationParams.getRideName())
                     .setDay(notificationParams.getDay())
                     .setUUID(notificationParams.getVisitorId())
-                    .build(), responseObserver);
+                    .build(), responseObserver
+            );
         } catch (StatusRuntimeException e) {
-
-        }
-        finally {
+            logger.error("{}: {}", e.getStatus().getCode().toString(), e.getMessage());
+        } finally {
             try {
-                channel.shutdown().awaitTermination(10000, TimeUnit.DAYS);
+                channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                logger.error("Error while shutting down channel: {}", e.getMessage());
+                Thread.currentThread().interrupt(); // Restore interrupted status
             }
         }
+    }
 
+    private static class NotificationObserver implements StreamObserver<StringValue> {
+        private final Logger logger = LoggerFactory.getLogger(NotificationObserver.class);
+
+        @Override
+        public void onNext(StringValue response) {
+            String notificationMessage = response.getValue();
+            logger.info("Received notification: {}", notificationMessage);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            logger.error("Error in communication: {}", t.getMessage());
+        }
+
+        @Override
+        public void onCompleted() {
+            logger.info("Notification stream completed.");
+        }
     }
 }

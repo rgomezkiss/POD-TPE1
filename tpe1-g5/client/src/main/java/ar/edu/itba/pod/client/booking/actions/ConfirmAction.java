@@ -8,12 +8,18 @@ import ar.edu.itba.pod.grpc.booking.BookResponse;
 import ar.edu.itba.pod.grpc.booking.BookingServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConfirmAction implements Action {
+
+    private final static Logger logger = LoggerFactory.getLogger(ConfirmAction.class);
+
     @Override
-    public void execute(AbstractParams params, ManagedChannel channel) {
-        BookingParams bookingParams = (BookingParams) params;
-        BookingServiceGrpc.BookingServiceBlockingStub blockingStub = BookingServiceGrpc.newBlockingStub(channel);
+    public void execute(final AbstractParams params, final ManagedChannel channel) {
+        final BookingParams bookingParams = (BookingParams) params;
+        final BookingServiceGrpc.BookingServiceBlockingStub blockingStub = BookingServiceGrpc.newBlockingStub(channel);
+
         try {
             blockingStub.confirmBooking(BookRequest.newBuilder()
                     .setUUID(bookingParams.getVisitorId())
@@ -22,7 +28,7 @@ public class ConfirmAction implements Action {
                     .setTimeSlot(bookingParams.getSlot())
                     .build());
         } catch (StatusRuntimeException e) {
-            //
+            logger.error("{}: {}", e.getStatus().getCode().toString(), e.getMessage());
         }
     }
 }

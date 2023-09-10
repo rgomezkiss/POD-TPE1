@@ -15,17 +15,16 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RidesAction implements Action {
     private final static Logger logger = LoggerFactory.getLogger(RidesAction.class);
 
     @Override
-    public void execute(AbstractParams params, ManagedChannel channel) {
-        AdminParams adminParams = (AdminParams) params;
-
-        ParkAdminServiceGrpc.ParkAdminServiceBlockingStub blockingStub = ParkAdminServiceGrpc.newBlockingStub(channel);
-
-        List<AddAttractionRequest> toAddAttractions = parseFile(adminParams.getInputPath());
+    public void execute(final AbstractParams params, final ManagedChannel channel) {
+        final AdminParams adminParams = (AdminParams) params;
+        final ParkAdminServiceGrpc.ParkAdminServiceBlockingStub blockingStub = ParkAdminServiceGrpc.newBlockingStub(channel);
+        final List<AddAttractionRequest> toAddAttractions = parseFile(adminParams.getInputPath());
 
         int added = 0;
         int notAdded = 0;
@@ -35,7 +34,7 @@ public class RidesAction implements Action {
                 blockingStub.addAttraction(attraction);
                 added++;
             } catch (StatusRuntimeException e) {
-                logger.info(String.format("%s: %s", e.getStatus().getCode().toString(), e.getMessage()));
+                logger.error("{}: {}", e.getStatus().getCode().toString(), e.getMessage());
                 notAdded++;
             }
         }
@@ -50,9 +49,9 @@ public class RidesAction implements Action {
 
     private static List<AddAttractionRequest> parseFile(String path) {
         List<AddAttractionRequest> attractions = null;
-        try {
-            attractions = Files.lines(Paths.get(path))
-                    .skip(1)
+        try (Stream<String> lines = Files.lines(Paths.get(path))) {
+            attractions = lines
+                    .skip(1) // Salteamos los encabezados
                     .map(line -> line.split(";"))
                     .map(data -> AddAttractionRequest.newBuilder()
                             .setAttractionName(data[0])
@@ -62,7 +61,7 @@ public class RidesAction implements Action {
                             .build())
                     .collect(Collectors.toList());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Error while reading file: {}", e.getMessage());
         }
 
         return attractions;

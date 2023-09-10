@@ -19,19 +19,19 @@ public class AdminClient {
     public static void main(String[] args) throws InterruptedException {
         logger.info("Admin Client Starting ...");
 
-        AbstractParams params = new AdminParser().parse(args);
+        final AbstractParams params = new AdminParser().parse(args);
 
         if (params == null) {
             return;
         }
 
-        ManagedChannel channel = ManagedChannelBuilder
+        final ManagedChannel channel = ManagedChannelBuilder
                 .forAddress(params.getServerAddress().getHost(), params.getServerAddress().getPort())
                 .usePlaintext()
                 .build();
 
         try {
-            switch ( AdminActions.valueOf(params.getAction())) {
+            switch (AdminActions.valueOf(params.getAction())) {
                 case RIDES -> new RidesAction().execute(params, channel);
                 case TICKETS -> new TicketsAction().execute(params, channel);
                 case SLOTS -> new SlotsAction().execute(params, channel);

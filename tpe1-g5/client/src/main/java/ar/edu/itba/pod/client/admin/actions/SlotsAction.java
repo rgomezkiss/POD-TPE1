@@ -16,29 +16,30 @@ public class SlotsAction implements Action {
     private final static Logger logger = LoggerFactory.getLogger(SlotsAction.class);
 
     @Override
-    public void execute(AbstractParams params, ManagedChannel channel) {
-        AdminParams adminParams = (AdminParams) params;
+    public void execute(final AbstractParams params, final ManagedChannel channel) {
+        final AdminParams adminParams = (AdminParams) params;
+        final ParkAdminServiceGrpc.ParkAdminServiceBlockingStub blockingStub = ParkAdminServiceGrpc.newBlockingStub(channel);
 
-        ParkAdminServiceGrpc.ParkAdminServiceBlockingStub blockingStub = ParkAdminServiceGrpc.newBlockingStub(channel);
-
-        AddSlotRequest addSlotRequest = AddSlotRequest.newBuilder()
+        final AddSlotRequest addSlotRequest = AddSlotRequest.newBuilder()
                 .setAttractionName(adminParams.getRide())
                 .setCapacity(adminParams.getCapacity())
                 .setDay(adminParams.getDay())
                 .build();
 
         try {
-            AddSlotResponse addSlotResponse = blockingStub.addSlot(addSlotRequest);
-            System.out.println(
-                    String.format("Loaded capacity of %d for %s on day %d\n" +
-                                    "%d bookings confirmed without changes\n" +
-                                    "%d bookings relocated\n" +
-                                    "%d bookings cancelled\n",
-                            addSlotRequest.getCapacity(), addSlotRequest.getAttractionName(), addSlotRequest.getDay(),
-                            addSlotResponse.getConfirmed(), addSlotResponse.getRelocated(), addSlotResponse.getCancelled())
+            final AddSlotResponse addSlotResponse = blockingStub.addSlot(addSlotRequest);
+            System.out.printf("""
+                    Loaded capacity of %d for %s on day %d
+                    %d bookings confirmed without changes
+                    %d bookings relocated
+                    %d bookings cancelled
+                    %n""",
+                    addSlotRequest.getCapacity(), addSlotRequest.getAttractionName(),
+                    addSlotRequest.getDay(), addSlotResponse.getConfirmed(),
+                    addSlotResponse.getRelocated(), addSlotResponse.getCancelled()
             );
         } catch (StatusRuntimeException e) {
-            logger.info(String.format("%s: %s", e.getStatus().getCode().toString(), e.getMessage()));
+            logger.error("{}: {}", e.getStatus().getCode().toString(), e.getMessage());
         }
     }
 }

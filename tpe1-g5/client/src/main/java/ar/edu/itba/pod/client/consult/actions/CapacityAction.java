@@ -5,37 +5,44 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import ar.edu.itba.pod.client.consult.utils.ConsultParams;
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.park_consult.*;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CapacityAction implements Action {
-    @Override
-    public void execute(AbstractParams params, ManagedChannel channel) {
-        ConsultParams consultParams = (ConsultParams) params;
 
-        ParkConsultServiceGrpc.ParkConsultServiceBlockingStub blockingStub = ParkConsultServiceGrpc.newBlockingStub(channel);
+    private final static Logger logger = LoggerFactory.getLogger(CapacityAction.class);
+
+    @Override
+    public void execute(final AbstractParams params, final ManagedChannel channel) {
+        final ConsultParams consultParams = (ConsultParams) params;
+        final ParkConsultServiceGrpc.ParkConsultServiceBlockingStub blockingStub = ParkConsultServiceGrpc.newBlockingStub(channel);
 
         try {
-            GetSuggestedCapacityResponse capacityResponse = blockingStub.
-                    getSuggestedCapacity(GetSuggestedCapacityRequest.newBuilder().setDay(consultParams.getDay()).build());
+            final GetSuggestedCapacityResponse capacityResponse = blockingStub.getSuggestedCapacity(
+                    GetSuggestedCapacityRequest.newBuilder().setDay(consultParams.getDay()).build()
+            );
 
             writeToFile(capacityResponse.getSuggestedCapacitiesList(), consultParams.getOutPath());
         } catch (StatusRuntimeException e) {
-
+            logger.error("{}: {}", e.getStatus().getCode().toString(), e.getMessage());
         }
     }
 
-    private void writeToFile(List<SuggestedCapacity> suggestedCapacities, String path) {
+    private void writeToFile(final List<SuggestedCapacity> suggestedCapacities, final String path) {
         try {
-            Path filePath = Paths.get(path);
+            final Path filePath = Paths.get(path);
 
-            List<String> lines = suggestedCapacities.stream()
+            final List<String> lines = suggestedCapacities.stream()
                     .map(capacity -> String.format("%s | %7d | %s",
                             capacity.getMaxCapSlot(),
                             capacity.getSuggestedCapacity(),
@@ -44,9 +51,9 @@ public class CapacityAction implements Action {
 
             lines.add(0, "Slot  | Capacity | Attraction");
 
-            Files.write(filePath, lines, StandardCharsets.UTF_8);
+            Files.write(filePath, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Error while writing in file: {}", e.getMessage());
         }
     }
 }

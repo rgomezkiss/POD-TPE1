@@ -18,20 +18,20 @@ public class NotificationClient {
     public static void main(String[] args) throws InterruptedException {
         logger.info("Notification Client Starting ...");
 
-        AbstractParams params = new NotificationParser().parse(args);
+        final AbstractParams params = new NotificationParser().parse(args);
 
         if (params == null) {
             return;
         }
 
-        ManagedChannel channel = ManagedChannelBuilder
+        final ManagedChannel channel = ManagedChannelBuilder
                 .forAddress(params.getServerAddress().getHost(), params.getServerAddress().getPort())
                 .usePlaintext()
                 .build();
 
         switch (NotificationActions.valueOf(params.getAction())) {
             case FOLLOW -> new FollowAction().execute(params, channel);
-            case UNFOLLOW ->{
+            case UNFOLLOW -> {
                 new UnfollowAction().execute(params, channel);
                 channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
             }

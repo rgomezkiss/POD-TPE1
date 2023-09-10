@@ -18,13 +18,13 @@ public class ConsultClient {
     public static void main(String[] args) throws InterruptedException {
         logger.info("Consult Client Starting ...");
 
-        AbstractParams params = new ConsultParser().parse(args);
+        final AbstractParams params = new ConsultParser().parse(args);
 
         if (params == null) {
             return;
         }
 
-        ManagedChannel channel = ManagedChannelBuilder
+        final ManagedChannel channel = ManagedChannelBuilder
                 .forAddress(params.getServerAddress().getHost(), params.getServerAddress().getPort())
                 .usePlaintext()
                 .build();
