@@ -34,6 +34,7 @@ public class FollowAction implements Action {
         } catch (StatusRuntimeException e) {
             logger.error("{}: {}", e.getStatus().getCode().toString(), e.getMessage());
         } finally {
+            //TODO: check
             try {
                 channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
@@ -49,7 +50,7 @@ public class FollowAction implements Action {
         @Override
         public void onNext(StringValue response) {
             String notificationMessage = response.getValue();
-            logger.info("Received notification: {}", notificationMessage);
+            System.out.println(notificationMessage);
         }
 
         @Override

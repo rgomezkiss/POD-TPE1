@@ -1,8 +1,10 @@
 package ar.edu.itba.pod.server.models;
 
 import ar.edu.itba.pod.grpc.booking.BookRequest;
+import ar.edu.itba.pod.grpc.notification.NotificationRequest;
 import ar.edu.itba.pod.server.utils.CommonUtils;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -13,8 +15,8 @@ public class ServerBooking {
     private LocalTime slot;
     private final UUID userId;
     private boolean isConfirmed;
-    private final LocalTime bookingTime;
-    private LocalTime confirmedTime;
+    private final LocalDateTime bookingTime;
+    private LocalDateTime confirmedTime;
 
     public ServerBooking(BookRequest bookRequest) {
         this.attractionName = bookRequest.getAttractionName();
@@ -22,7 +24,7 @@ public class ServerBooking {
         this.slot = LocalTime.parse(bookRequest.getTimeSlot(), CommonUtils.formatter);
         this.userId = UUID.fromString(bookRequest.getUUID());
         this.isConfirmed = false;
-        this.bookingTime = LocalTime.now();
+        this.bookingTime = LocalDateTime.now();
         this.confirmedTime = null;
         CommonUtils.validateDay(this.day);
     }
@@ -48,14 +50,18 @@ public class ServerBooking {
     public UUID getUserId() {
         return userId;
     }
-    public LocalTime getBookingTime() {
+    public LocalDateTime getBookingTime() {
         return bookingTime;
     }
-    public LocalTime getConfirmedTime() {
+    public LocalDateTime getConfirmedTime() {
         return confirmedTime;
     }
-    public void setConfirmedTime(LocalTime confirmedTime) {
+    public void setConfirmedTime(LocalDateTime confirmedTime) {
         this.confirmedTime = confirmedTime;
+    }
+
+    public boolean equalsNotificationRequest(NotificationRequest request) {
+        return this.attractionName.equals(request.getAttractionName()) && this.day == request.getDay() && this.userId.equals(UUID.fromString(request.getUUID()));
     }
 
     @Override

@@ -15,10 +15,12 @@ import ar.edu.itba.pod.server.utils.CommonUtils;
 import com.google.protobuf.StringValue;
 import io.grpc.stub.StreamObserver;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 public class ParkData {
     // Attraction -> Day -> TimeSlot -> List<Book>
@@ -29,14 +31,16 @@ public class ParkData {
     private final Map<String, ServerAttraction> attractions = new ConcurrentHashMap<>();
     //UserId -> Day -> Ticket
     private final Map<UUID, Map<Integer, ServerTicket>> tickets = new ConcurrentHashMap<>();
-    //TODO: change to proper notifications...
-    private final Map<NotificationRequest, StreamObserver<StringValue>> observers = new ConcurrentHashMap<>();
+    private final Map<ServerBooking, StreamObserver<StringValue>> observers = new ConcurrentHashMap<>();
 
     public Map<String, ServerAttraction> getAttractions() {
         return attractions;
     }
 
-    private final static String CONFIRMED_BOOK_STATUS = "The reservation for %s at %s on the day %d is %s";
+    private final static String CONFIRMED = "CONFIRMED";
+    private final static String CANCELLED = "CANCELLED";
+    private final static String PENDING = "PENDING";
+    private final static String BOOK_STATUS = "The reservation for %s at %s on the day %d is %s";
     private final static String CAPACITY_ANNOUNCED = "%s announced slot capacity for the day %d: %d places";
     private final static String MOVED_BOOK = "The reservation for %s at %s on the day %d was moved to %s and is PENDING";
 
@@ -91,10 +95,12 @@ public class ParkData {
             throw new AlreadyExistsException(CommonUtils.CAPACITY_ALREADY_ASSIGNED);
         }
 
+        capacities.get(attraction).put(request.getDay(), request.getCapacity());
+
         return reorganizeBookings(attraction, request.getDay(), request.getCapacity());
     }
 
-    // TODO Para cada slot
+    //Para cada slot
     //del día (en orden cronológico) y en función de la capacidad indicada se deberán
     //primero confirmar todas las reservas posibles teniendo en cuenta el orden de la
     //realización de la reserva (priorizando a las primeras N reservas realizadas siendo N
@@ -110,38 +116,87 @@ public class ParkData {
         int relocated = 0;
         int cancelled = 0;
 
+        StreamObserver<StringValue> currentObserver;
+
         // Recorremos las reservas y los horarios disponibles
         for (Map.Entry<LocalTime, List<ServerBooking>> entry : capacityBookings.entrySet()) {
             final List<ServerBooking> reservations = entry.getValue();
+            ServerBooking currentBooking;
 
             // Confirmamos todas las que se puedan
             for (int i = 0; i < capacity; i++) {
-                reservations.get(i).setConfirmed(true);
-                reservations.get(i).setConfirmedTime(LocalTime.now());
+                currentBooking = reservations.get(i);
+                currentBooking.setConfirmed(true);
+                currentBooking.setConfirmedTime(LocalDateTime.now());
+
+                currentObserver = observers.get(currentBooking);
+
+                // Notificamos que se cargo la capacidad Y que se confirmo la reserva
+                if (currentObserver != null) {
+                    currentObserver.onNext(StringValue.newBuilder()
+                            .setValue(String.format(CAPACITY_ANNOUNCED, attraction.getAttractionName(), day, capacity))
+                    .build());
+                    currentObserver.onNext(StringValue.newBuilder().setValue(
+                            String.format(BOOK_STATUS, currentBooking.getAttractionName(), currentBooking.getSlot().toString(), currentBooking.getDay(), CONFIRMED)
+                    ).build());
+                    currentObserver.onCompleted();
+                    observers.remove(currentBooking);
+                }
+
                 confirmed++;
-                //TODO: notificar que se confirmo o cargo cap
             }
 
             // Agregamos las excedentes a la lista de reservas a mover
             for (int i = capacity; i < reservations.size(); i++) {
-                //Cambiar por una queue para que se haga en una sola operación
-                toMove.add(reservations.get(i));
-                //reservations.remove(reservations.get(i));
+                currentBooking = reservations.get(i);
+                currentObserver = observers.get(currentBooking);
+
+                // Notificamos que se cargo la capacidad
+                if (currentObserver != null) {
+                    currentObserver.onNext(StringValue.newBuilder()
+                            .setValue(String.format(CAPACITY_ANNOUNCED, attraction.getAttractionName(), day, capacity))
+                            .build());
+                }
+
+                toMove.add(currentBooking);
             }
             reservations.subList(capacity, reservations.size()).clear();
         }
 
-        // Reasignamos las reservas excedentes
         for (ServerBooking booking : toMove) {
             final LocalTime nextAvailableTime = getNextAvailableTime(capacityBookings, booking.getSlot(), attraction, capacity);
 
             if (nextAvailableTime != null) {
-                capacityBookings.putIfAbsent(nextAvailableTime, new ArrayList<>());
+                currentObserver = observers.get(booking);
+
+                if (currentObserver != null) {
+                    currentObserver.onNext(StringValue.newBuilder()
+                            .setValue(String.format(MOVED_BOOK, attraction.getAttractionName(), booking.getSlot().toString(), day, nextAvailableTime.toString()))
+                            .build());
+                }
+
+                booking.setSlot(nextAvailableTime);
+                capacityBookings.putIfAbsent(nextAvailableTime, new LinkedList<>());
                 capacityBookings.get(nextAvailableTime).add(booking);
                 relocated++;
-            }
+            } else {
+                // TODO: agregar ticket.cancelBook()
 
-            // Iterar sobre las que van a quedar canceladas
+                currentObserver = observers.get(booking);
+
+                if (currentObserver != null) {
+                    currentObserver.onNext(StringValue.newBuilder()
+                            .setValue(String.format(CAPACITY_ANNOUNCED, attraction.getAttractionName(), day, capacity))
+                            .build());
+                    currentObserver.onNext(StringValue.newBuilder().setValue(
+                            String.format(BOOK_STATUS, booking.getAttractionName(), booking.getSlot().toString(), booking.getDay(), CANCELLED)
+                    ).build());
+                    currentObserver.onCompleted();
+                    observers.remove(booking);
+                }
+
+                cancelled++;
+            }
         }
 
         return AddSlotResponse.newBuilder()
@@ -182,8 +237,9 @@ public class ParkData {
             final int day = booking.getDay();
             final Integer capacity = getDayCapacity(attraction, day);
             bookings.get(attraction).putIfAbsent(day, new ConcurrentHashMap<>());
-            // TODO: Ver si conviene modificar el tipo de List para después de reorganizar
-            final List<ServerBooking> books = bookings.get(attraction).get(day).getOrDefault(booking.getSlot(), new ArrayList<>());
+            bookings.get(attraction).get(day).putIfAbsent(booking.getSlot(), new LinkedList<>());
+
+            final List<ServerBooking> books = bookings.get(attraction).get(day).get(booking.getSlot());
 
             if (capacity != null) {
                 if (books.size() < capacity) {
@@ -192,7 +248,7 @@ public class ParkData {
                     }
                     books.add(booking);
                     booking.setConfirmed(true);
-                    booking.setConfirmedTime(LocalTime.now());
+                    booking.setConfirmedTime(LocalDateTime.now());
                     ticket.book();
                 }
                 throw new UnavailableException(CommonUtils.CAPACITY_FULL_EXCEPTION);
@@ -220,7 +276,7 @@ public class ParkData {
 
         final LocalTime endTime = CommonUtils.parseTime(request.getTimeRangeEnd());
 
-        final List<AvailabilityResponse> availabilityResponses = new LinkedList<>();
+        final List<AvailabilityResponse> availabilityResponses = new ArrayList<>();
 
         if (endTime == null){
             availabilityResponses.add(getAvailability(request.getAttractionName(), request.getDay(), startTime));
@@ -301,24 +357,31 @@ public class ParkData {
             throw new NotFoundException(CommonUtils.CAPACITY_NOT_ASSIGNED);
         }
 
-        Optional<ServerBooking> toConfirmBook = bookings
+        ServerBooking toConfirmBook = bookings
                 .get(attraction)
                 .get(booking.getDay())
                 .getOrDefault(booking.getSlot(), new ArrayList<>())
                 .stream()
                 .filter(toFind -> toFind.equals(booking))
-                .findFirst();
+                .findFirst().orElseThrow(() -> new NotFoundException(CommonUtils.BOOKING_NOT_FOUND));
 
-        if (toConfirmBook.isPresent()) {
-            if (toConfirmBook.get().isConfirmed()) {
-                throw new AlreadyExistsException(CommonUtils.BOOKING_ALREADY_CONFIRMED);
-            }
-            toConfirmBook.get().setConfirmed(true);
-            toConfirmBook.get().setConfirmedTime(LocalTime.now());
-        } else {
-            throw new NotFoundException(CommonUtils.BOOKING_NOT_FOUND);
-
+        if (toConfirmBook.isConfirmed()) {
+            throw new AlreadyExistsException(CommonUtils.BOOKING_ALREADY_CONFIRMED);
         }
+
+        StreamObserver<StringValue> observer = observers.get(toConfirmBook);
+
+        // Notificamos que se cargo la capacidad Y que se confirmo la reserva
+        if (observer != null) {
+            observer.onNext(StringValue.newBuilder().setValue(
+                    String.format(BOOK_STATUS, toConfirmBook.getAttractionName(), toConfirmBook.getSlot().toString(), toConfirmBook.getDay(), CONFIRMED)
+            ).build());
+            observer.onCompleted();
+            observers.remove(toConfirmBook);
+        }
+
+        toConfirmBook.setConfirmed(true);
+        toConfirmBook.setConfirmedTime(LocalDateTime.now());
     }
 
     public void cancelBooking(final ServerBooking booking) {
@@ -335,6 +398,17 @@ public class ParkData {
 
         // Elimino la reserva si existía, y sino ya vuelvo
         if (bookings.get(attraction).get(booking.getDay()).getOrDefault(booking.getSlot(), new ArrayList<>()).remove(booking)) {
+            StreamObserver<StringValue> observer = observers.get(booking);
+
+            // Notificamos que se cargo la capacidad Y que se confirmo la reserva
+            if (observer != null) {
+                observer.onNext(StringValue.newBuilder().setValue(
+                        String.format(BOOK_STATUS, booking.getAttractionName(), booking.getSlot().toString(), booking.getDay(), CANCELLED)
+                ).build());
+                observer.onCompleted();
+                observers.remove(booking);
+            }
+
             ticket.cancelBook();
         }
         // No existía la reserva
@@ -438,16 +512,33 @@ public class ParkData {
         // si el día es inválido --
         // si no cuenta con un pase válido para ese día --
         // si ya estaba registrado para ser notificado de esa atracción ese día --
+        // Adicional de diseño: Falla si no tiene ninguna reserva para esa atracción ese día
 
         CommonUtils.validateDay(request.getDay());
-        validateAttractionExists(request.getAttractionName());
+        final ServerAttraction attraction = validateAttractionExists(request.getAttractionName());
         validateTicketExists(UUID.fromString(request.getUUID()), request.getDay());
 
-        if (observers.containsKey(request)) {
+        if (isFollowing(request) != null) {
             throw new AlreadyExistsException(CommonUtils.ALREADY_FOLLOWING);
         }
 
-        observers.put(request, observer);
+        final ServerBooking booking = getMostRecentBooking(attraction, request.getDay(), UUID.fromString(request.getUUID()));
+
+        if (booking == null) {
+            throw new NotFoundException(CommonUtils.BOOKING_NOT_FOUND);
+        }
+
+        if (booking.isConfirmed()) {
+            observer.onNext(StringValue.newBuilder().setValue(
+                    String.format(BOOK_STATUS, booking.getAttractionName(), booking.getSlot().toString(),booking.getDay(), CONFIRMED)
+            ).build());
+            observer.onCompleted();
+            return;
+        }
+        observer.onNext(StringValue.newBuilder().setValue(
+                String.format(BOOK_STATUS, booking.getAttractionName(), booking.getSlot().toString(),booking.getDay(), PENDING)
+        ).build());
+        observers.put(booking, observer);
     }
 
     public void unfollow(final NotificationRequest request) {
@@ -461,13 +552,43 @@ public class ParkData {
         validateAttractionExists(request.getAttractionName());
         validateTicketExists(UUID.fromString(request.getUUID()), request.getDay());
 
-        if (!observers.containsKey(request)) {
+        final ServerBooking booking = isFollowing(request);
+
+        if (booking == null) {
             throw new AlreadyExistsException(CommonUtils.ALREADY_UNFOLLOWING);
         }
 
-        observers.get(request).onCompleted();
-        observers.remove(request);
+        observers.get(booking).onCompleted();
+        observers.remove(booking);
     }
+
+    private ServerBooking getMostRecentBooking(final ServerAttraction attraction, final int day, final UUID userId) {
+        if (bookings.containsKey(attraction) && bookings.get(attraction).containsKey(day)) {
+            final Map<LocalTime, List<ServerBooking>> dayBookings = bookings.get(attraction).get(day);
+            if (dayBookings != null) {
+                final List<ServerBooking> userBookings = dayBookings.values().stream()
+                        .flatMap(Collection::stream)
+                        .filter(booking -> booking.getUserId().equals(userId))
+                        .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+
+                if (!userBookings.isEmpty()) {
+                    return Collections.max(userBookings, Comparator.comparing(ServerBooking::getBookingTime));
+                }
+            }
+        }
+        return null;
+    }
+
+    private ServerBooking isFollowing(NotificationRequest request) {
+        for (ServerBooking booking: observers.keySet()) {
+            if (booking.equalsNotificationRequest(request)) {
+                return booking;
+            }
+        }
+        return null;
+    }
+
+    //TODO: agregar métodos privados para cada vez que se mandan mensajes y hay que ver si existe o no observer
 
     /**
      * Validators
