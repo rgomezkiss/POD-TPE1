@@ -2,7 +2,6 @@ package ar.edu.itba.pod.client.admin.actions;
 
 import ar.edu.itba.pod.client.admin.utils.AdminParams;
 import ar.edu.itba.pod.client.utils.Action;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.grpc.park_admin.*;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
@@ -16,14 +15,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TicketsAction implements Action {
+public class TicketsAction implements Action<AdminParams> {
     private final static Logger logger = LoggerFactory.getLogger(TicketsAction.class);
 
     @Override
-    public void execute(final AbstractParams params, final ManagedChannel channel) {
-        final AdminParams adminParams = (AdminParams) params;
+    public void execute(final AdminParams params, final ManagedChannel channel) {
         final ParkAdminServiceGrpc.ParkAdminServiceBlockingStub blockingStub = ParkAdminServiceGrpc.newBlockingStub(channel);
-        final List<AddTicketRequest> toAddTickets = parseFile(adminParams.getInputPath());
+        final List<AddTicketRequest> toAddTickets = parseFile(params.getInputPath());
 
         int added = 0;
         int notAdded = 0;

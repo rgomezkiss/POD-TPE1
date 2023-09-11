@@ -4,6 +4,7 @@ import ar.edu.itba.pod.client.admin.actions.AdminActions;
 import ar.edu.itba.pod.client.admin.actions.RidesAction;
 import ar.edu.itba.pod.client.admin.actions.SlotsAction;
 import ar.edu.itba.pod.client.admin.actions.TicketsAction;
+import ar.edu.itba.pod.client.admin.utils.AdminParams;
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.admin.utils.AdminParser;
 import io.grpc.ManagedChannel;
@@ -19,7 +20,7 @@ public class AdminClient {
     public static void main(String[] args) throws InterruptedException {
         logger.info("Admin Client Starting ...");
 
-        final AbstractParams params = new AdminParser().parse(args);
+        final AdminParams params = new AdminParser().parse(args);
 
         if (params == null) {
             return;

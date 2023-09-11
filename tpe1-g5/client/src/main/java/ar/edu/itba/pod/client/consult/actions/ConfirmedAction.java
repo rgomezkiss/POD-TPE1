@@ -1,5 +1,6 @@
 package ar.edu.itba.pod.client.consult.actions;
 
+import ar.edu.itba.pod.client.booking.utils.BookingParams;
 import ar.edu.itba.pod.client.consult.utils.ConsultParams;
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
@@ -18,20 +19,19 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ConfirmedAction implements Action {
+public class ConfirmedAction implements Action<ConsultParams> {
 
     private final static Logger logger = LoggerFactory.getLogger(ConfirmedAction.class);
 
     @Override
-    public void execute(final AbstractParams params, final ManagedChannel channel) {
-        final ConsultParams consultParams = (ConsultParams) params;
+    public void execute(final ConsultParams params, final ManagedChannel channel) {
         final ParkConsultServiceGrpc.ParkConsultServiceBlockingStub blockingStub = ParkConsultServiceGrpc.newBlockingStub(channel);
 
         try {
             final GetBookingsResponse bookingsResponse = blockingStub.
-                    getBookings(GetBookingsRequest.newBuilder().setDay(consultParams.getDay()).build());
+                    getBookings(GetBookingsRequest.newBuilder().setDay(params.getDay()).build());
 
-            writeToFile(bookingsResponse.getBookingsList(), consultParams.getOutPath());
+            writeToFile(bookingsResponse.getBookingsList(), params.getOutPath());
         } catch (StatusRuntimeException e) {
             logger.error("{}: {}", e.getStatus().getCode().toString(), e.getMessage());
         }

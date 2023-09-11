@@ -18,21 +18,20 @@ import io.grpc.StatusRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CapacityAction implements Action {
+public class CapacityAction implements Action<ConsultParams> {
 
     private final static Logger logger = LoggerFactory.getLogger(CapacityAction.class);
 
     @Override
-    public void execute(final AbstractParams params, final ManagedChannel channel) {
-        final ConsultParams consultParams = (ConsultParams) params;
+    public void execute(final ConsultParams params, final ManagedChannel channel) {
         final ParkConsultServiceGrpc.ParkConsultServiceBlockingStub blockingStub = ParkConsultServiceGrpc.newBlockingStub(channel);
 
         try {
             final GetSuggestedCapacityResponse capacityResponse = blockingStub.getSuggestedCapacity(
-                    GetSuggestedCapacityRequest.newBuilder().setDay(consultParams.getDay()).build()
+                    GetSuggestedCapacityRequest.newBuilder().setDay(params.getDay()).build()
             );
 
-            writeToFile(capacityResponse.getSuggestedCapacitiesList(), consultParams.getOutPath());
+            writeToFile(capacityResponse.getSuggestedCapacitiesList(), params.getOutPath());
         } catch (StatusRuntimeException e) {
             logger.error("{}: {}", e.getStatus().getCode().toString(), e.getMessage());
         }

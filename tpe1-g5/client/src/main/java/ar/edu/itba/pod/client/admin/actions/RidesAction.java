@@ -2,7 +2,6 @@ package ar.edu.itba.pod.client.admin.actions;
 
 import ar.edu.itba.pod.client.admin.utils.AdminParams;
 import ar.edu.itba.pod.client.utils.Action;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.grpc.park_admin.AddAttractionRequest;
 import ar.edu.itba.pod.grpc.park_admin.ParkAdminServiceGrpc;
 import io.grpc.ManagedChannel;
@@ -17,14 +16,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class RidesAction implements Action {
+public class RidesAction implements Action<AdminParams> {
     private final static Logger logger = LoggerFactory.getLogger(RidesAction.class);
 
     @Override
-    public void execute(final AbstractParams params, final ManagedChannel channel) {
-        final AdminParams adminParams = (AdminParams) params;
+    public void execute(final AdminParams params, final ManagedChannel channel) {
         final ParkAdminServiceGrpc.ParkAdminServiceBlockingStub blockingStub = ParkAdminServiceGrpc.newBlockingStub(channel);
-        final List<AddAttractionRequest> toAddAttractions = parseFile(adminParams.getInputPath());
+        final List<AddAttractionRequest> toAddAttractions = parseFile(params.getInputPath());
 
         int added = 0;
         int notAdded = 0;

@@ -3,6 +3,7 @@ package ar.edu.itba.pod.client.consult;
 import ar.edu.itba.pod.client.consult.actions.CapacityAction;
 import ar.edu.itba.pod.client.consult.actions.ConfirmedAction;
 import ar.edu.itba.pod.client.consult.actions.ConsultActions;
+import ar.edu.itba.pod.client.consult.utils.ConsultParams;
 import ar.edu.itba.pod.client.consult.utils.ConsultParser;
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import io.grpc.ManagedChannel;
@@ -18,7 +19,7 @@ public class ConsultClient {
     public static void main(String[] args) throws InterruptedException {
         logger.info("Consult Client Starting ...");
 
-        final AbstractParams params = new ConsultParser().parse(args);
+        final ConsultParams params = new ConsultParser().parse(args);
 
         if (params == null) {
             return;

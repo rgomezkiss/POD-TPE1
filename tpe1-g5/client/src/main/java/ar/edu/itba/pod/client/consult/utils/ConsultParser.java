@@ -27,7 +27,7 @@ public class ConsultParser {
     }
 
     // -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName -Dday=dayOfYear -Dride=rideName -Dvisitor=visitorId
-    public AbstractParams parse(String[] args) {
+    public ConsultParams parse(String[] args) {
         try {
             final CommandLine cmd = parser.parse(options, args);
             final ServerAddress serverAddress = new ServerAddress(cmd.getOptionValue(SERVER_ADDRESS));

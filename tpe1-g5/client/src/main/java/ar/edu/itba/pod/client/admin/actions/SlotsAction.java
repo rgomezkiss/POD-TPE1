@@ -12,18 +12,17 @@ import io.grpc.StatusRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SlotsAction implements Action {
+public class SlotsAction implements Action<AdminParams>  {
     private final static Logger logger = LoggerFactory.getLogger(SlotsAction.class);
 
     @Override
-    public void execute(final AbstractParams params, final ManagedChannel channel) {
-        final AdminParams adminParams = (AdminParams) params;
+    public void execute(final AdminParams params, final ManagedChannel channel) {
         final ParkAdminServiceGrpc.ParkAdminServiceBlockingStub blockingStub = ParkAdminServiceGrpc.newBlockingStub(channel);
 
         final AddSlotRequest addSlotRequest = AddSlotRequest.newBuilder()
-                .setAttractionName(adminParams.getRide())
-                .setCapacity(adminParams.getCapacity())
-                .setDay(adminParams.getDay())
+                .setAttractionName(params.getRide())
+                .setCapacity(params.getCapacity())
+                .setDay(params.getDay())
                 .build();
 
         try {

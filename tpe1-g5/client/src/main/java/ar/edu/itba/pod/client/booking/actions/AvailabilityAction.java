@@ -11,22 +11,21 @@ import io.grpc.StatusRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AvailabilityAction implements Action {
+public class AvailabilityAction implements Action<BookingParams> {
 
     private final static Logger logger = LoggerFactory.getLogger(AvailabilityAction.class);
 
     @Override
-    public void execute(final AbstractParams params, final ManagedChannel channel) {
-        final BookingParams bookingParams = (BookingParams) params;
+    public void execute(final BookingParams params, final ManagedChannel channel) {
         final BookingServiceGrpc.BookingServiceBlockingStub blockingStub = BookingServiceGrpc.newBlockingStub(channel);
 
         try {
             final GetAvailabilityResponse availabilityResponse = blockingStub.getAvailability(
                     GetAvailabilityRequest.newBuilder()
-                            .setDay(bookingParams.getDay())
-                            .setAttractionName(bookingParams.getRide())
-                            .setTimeRangeStart(bookingParams.getSlot())
-                            .setTimeRangeEnd(bookingParams.getSlotTo())
+                            .setDay(params.getDay())
+                            .setAttractionName(params.getRide())
+                            .setTimeRangeStart(params.getSlot())
+                            .setTimeRangeEnd(params.getSlotTo())
                             .build()
             );
 

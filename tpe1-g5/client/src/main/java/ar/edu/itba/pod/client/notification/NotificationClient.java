@@ -3,6 +3,7 @@ package ar.edu.itba.pod.client.notification;
 import ar.edu.itba.pod.client.notification.actions.FollowAction;
 import ar.edu.itba.pod.client.notification.actions.NotificationActions;
 import ar.edu.itba.pod.client.notification.actions.UnfollowAction;
+import ar.edu.itba.pod.client.notification.utils.NotificationParams;
 import ar.edu.itba.pod.client.notification.utils.NotificationParser;
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import io.grpc.ManagedChannel;
@@ -18,7 +19,7 @@ public class NotificationClient {
     public static void main(String[] args) throws InterruptedException {
         logger.info("Notification Client Starting ...");
 
-        final AbstractParams params = new NotificationParser().parse(args);
+        final NotificationParams params = new NotificationParser().parse(args);
 
         if (params == null) {
             return;

@@ -26,7 +26,7 @@ public class NotificationParser {
     }
 
     // -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName -Dday=dayOfYear -DoutPath=output.txt
-    public AbstractParams parse(String[] args) {
+    public NotificationParams parse(String[] args) {
         try {
             final CommandLine cmd = parser.parse(options, args);
             final ServerAddress serverAddress = new ServerAddress(cmd.getOptionValue(SERVER_ADDRESS));

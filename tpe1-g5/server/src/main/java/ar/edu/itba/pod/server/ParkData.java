@@ -180,8 +180,6 @@ public class ParkData {
                 capacityBookings.get(nextAvailableTime).add(booking);
                 relocated++;
             } else {
-                // TODO: agregar ticket.cancelBook()
-
                 currentObserver = observers.get(booking);
 
                 if (currentObserver != null) {
@@ -195,6 +193,7 @@ public class ParkData {
                     observers.remove(booking);
                 }
 
+                tickets.get(booking.getUserId()).get(booking.getDay()).cancelBook();
                 cancelled++;
             }
         }
@@ -419,7 +418,6 @@ public class ParkData {
         return capacities.getOrDefault(attraction, new ConcurrentHashMap<>()).getOrDefault(day, null);
     }
 
-
     /**
      * ConsultService methods
      **/
@@ -589,6 +587,9 @@ public class ParkData {
     }
 
     //TODO: agregar métodos privados para cada vez que se mandan mensajes y hay que ver si existe o no observer
+    private void notifyIfFollowing(ServerBooking booking, String message) {
+    }
+
 
     /**
      * Validators

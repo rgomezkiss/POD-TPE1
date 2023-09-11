@@ -11,21 +11,20 @@ import io.grpc.StatusRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BookAction implements Action {
+public class BookAction implements Action<BookingParams> {
 
     private final static Logger logger = LoggerFactory.getLogger(BookAction.class);
 
     @Override
-    public void execute(final AbstractParams params, final ManagedChannel channel) {
-        final BookingParams bookingParams = (BookingParams) params;
+    public void execute(final BookingParams params, final ManagedChannel channel) {
         final BookingServiceGrpc.BookingServiceBlockingStub blockingStub = BookingServiceGrpc.newBlockingStub(channel);
 
         try {
             blockingStub.book(BookRequest.newBuilder()
-                    .setUUID(bookingParams.getVisitorId())
-                    .setAttractionName(bookingParams.getRide())
-                    .setDay(bookingParams.getDay())
-                    .setTimeSlot(bookingParams.getSlot())
+                    .setUUID(params.getVisitorId())
+                    .setAttractionName(params.getRide())
+                    .setDay(params.getDay())
+                    .setTimeSlot(params.getSlot())
                     .build());
         } catch (StatusRuntimeException e) {
             logger.error("{}: {}", e.getStatus().getCode().toString(), e.getMessage());

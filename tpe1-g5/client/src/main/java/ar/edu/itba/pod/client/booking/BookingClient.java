@@ -1,6 +1,7 @@
 package ar.edu.itba.pod.client.booking;
 
 import ar.edu.itba.pod.client.booking.actions.*;
+import ar.edu.itba.pod.client.booking.utils.BookingParams;
 import ar.edu.itba.pod.client.booking.utils.BookingParser;
 import ar.edu.itba.pod.client.utils.AbstractParams;
 import io.grpc.ManagedChannel;
@@ -15,7 +16,7 @@ public class BookingClient {
     public static void main(String[] args) throws InterruptedException {
         logger.info("Booking Client Starting ...");
 
-        final AbstractParams params = new BookingParser().parse(args);
+        final BookingParams params = new BookingParser().parse(args);
 
         if (params == null) {
             return;

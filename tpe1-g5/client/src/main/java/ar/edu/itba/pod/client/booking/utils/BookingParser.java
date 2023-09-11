@@ -31,7 +31,7 @@ public class BookingParser {
     }
 
     // -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName [ -Dday=dayOfYear -Dride=rideName -Dvisitor=visitorId -Dslot=bookingSlot -DslotTo=bookingSlotTo ]
-    public AbstractParams parse(String[] args) {
+    public BookingParams parse(String[] args) {
         try {
             final CommandLine cmd = parser.parse(options, args);
             final ServerAddress serverAddress = new ServerAddress(cmd.getOptionValue(SERVER_ADDRESS));

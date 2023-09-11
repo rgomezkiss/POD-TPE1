@@ -10,21 +10,19 @@ import io.grpc.StatusRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UnfollowAction implements Action {
+public class UnfollowAction implements Action<NotificationParams> {
 
     private final static Logger logger = LoggerFactory.getLogger(UnfollowAction.class);
 
     @Override
-    public void execute(final AbstractParams params, final ManagedChannel channel) {
-        final NotificationParams notificationParams = (NotificationParams) params;
-
+    public void execute(final NotificationParams params, final ManagedChannel channel) {
         try {
             final NotificationServiceGrpc.NotificationServiceBlockingStub blockingStub = NotificationServiceGrpc.newBlockingStub(channel);
 
             System.out.println(blockingStub.unfollow(NotificationRequest.newBuilder()
-                    .setAttractionName(notificationParams.getRideName())
-                    .setDay(notificationParams.getDay())
-                    .setUUID(notificationParams.getVisitorId())
+                    .setAttractionName(params.getRideName())
+                    .setDay(params.getDay())
+                    .setUUID(params.getVisitorId())
                     .build()));
         } catch (StatusRuntimeException e) {
             logger.error("{}: {}", e.getStatus().getCode().toString(), e.getMessage());
