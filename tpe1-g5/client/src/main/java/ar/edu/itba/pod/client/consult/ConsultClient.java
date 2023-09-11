@@ -5,7 +5,6 @@ import ar.edu.itba.pod.client.consult.actions.ConfirmedAction;
 import ar.edu.itba.pod.client.consult.actions.ConsultActions;
 import ar.edu.itba.pod.client.consult.utils.ConsultParams;
 import ar.edu.itba.pod.client.consult.utils.ConsultParser;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;

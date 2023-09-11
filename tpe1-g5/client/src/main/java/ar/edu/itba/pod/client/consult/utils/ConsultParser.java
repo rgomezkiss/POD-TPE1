@@ -1,7 +1,6 @@
 package ar.edu.itba.pod.client.consult.utils;
 
 import ar.edu.itba.pod.client.consult.actions.ConsultActions;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.ServerAddress;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;

@@ -3,7 +3,6 @@ package ar.edu.itba.pod.client.booking;
 import ar.edu.itba.pod.client.booking.actions.*;
 import ar.edu.itba.pod.client.booking.utils.BookingParams;
 import ar.edu.itba.pod.client.booking.utils.BookingParser;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;

@@ -1,8 +1,6 @@
 package ar.edu.itba.pod.client.consult.actions;
 
-import ar.edu.itba.pod.client.booking.utils.BookingParams;
 import ar.edu.itba.pod.client.consult.utils.ConsultParams;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.park_consult.*;
 import io.grpc.ManagedChannel;

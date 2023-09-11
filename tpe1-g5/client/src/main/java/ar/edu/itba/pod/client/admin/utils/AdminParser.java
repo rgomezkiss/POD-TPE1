@@ -1,6 +1,5 @@
 package ar.edu.itba.pod.client.admin.utils;
 
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.admin.actions.AdminActions;
 import ar.edu.itba.pod.client.utils.ServerAddress;
 import org.apache.commons.cli.*;

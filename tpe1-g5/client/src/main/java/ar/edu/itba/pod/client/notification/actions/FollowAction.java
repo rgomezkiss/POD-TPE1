@@ -1,7 +1,6 @@
 package ar.edu.itba.pod.client.notification.actions;
 
 import ar.edu.itba.pod.client.notification.utils.NotificationParams;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.notification.NotificationRequest;
 import ar.edu.itba.pod.grpc.notification.NotificationServiceGrpc;
@@ -9,11 +8,9 @@ import com.google.protobuf.StringValue;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FollowAction implements Action<NotificationParams> {
@@ -38,7 +35,6 @@ public class FollowAction implements Action<NotificationParams> {
         } finally {
             while (!responseObserver.getCompletedSignal()) {
             }
-
             // Cierra el canal una vez que se ha recibido onCompleted o después de esperar un tiempo razonable.
             channel.shutdown();
         }

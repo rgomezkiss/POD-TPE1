@@ -5,7 +5,6 @@ import ar.edu.itba.pod.client.notification.actions.NotificationActions;
 import ar.edu.itba.pod.client.notification.actions.UnfollowAction;
 import ar.edu.itba.pod.client.notification.utils.NotificationParams;
 import ar.edu.itba.pod.client.notification.utils.NotificationParser;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;

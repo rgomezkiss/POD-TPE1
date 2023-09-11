@@ -1,7 +1,6 @@
 package ar.edu.itba.pod.client.booking.actions;
 
 import ar.edu.itba.pod.client.booking.utils.BookingParams;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.booking.BookingServiceGrpc;
 import ar.edu.itba.pod.grpc.booking.GetAttractionsResponse;

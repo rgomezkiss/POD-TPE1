@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import ar.edu.itba.pod.client.consult.utils.ConsultParams;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.park_consult.*;
 import io.grpc.ManagedChannel;

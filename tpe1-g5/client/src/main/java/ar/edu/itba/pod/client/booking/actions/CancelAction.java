@@ -1,10 +1,8 @@
 package ar.edu.itba.pod.client.booking.actions;
 
 import ar.edu.itba.pod.client.booking.utils.BookingParams;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.booking.BookRequest;
-import ar.edu.itba.pod.grpc.booking.BookResponse;
 import ar.edu.itba.pod.grpc.booking.BookingServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;

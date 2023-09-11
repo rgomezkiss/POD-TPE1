@@ -1,9 +1,7 @@
 package ar.edu.itba.pod.client.admin.actions;
 
-import ar.edu.itba.pod.client.admin.AdminClient;
 import ar.edu.itba.pod.client.admin.utils.AdminParams;
 import ar.edu.itba.pod.client.utils.Action;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.grpc.park_admin.AddSlotRequest;
 import ar.edu.itba.pod.grpc.park_admin.AddSlotResponse;
 import ar.edu.itba.pod.grpc.park_admin.ParkAdminServiceGrpc;

@@ -5,7 +5,6 @@ import ar.edu.itba.pod.client.admin.actions.RidesAction;
 import ar.edu.itba.pod.client.admin.actions.SlotsAction;
 import ar.edu.itba.pod.client.admin.actions.TicketsAction;
 import ar.edu.itba.pod.client.admin.utils.AdminParams;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.admin.utils.AdminParser;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;

@@ -1,7 +1,6 @@
 package ar.edu.itba.pod.client.notification.actions;
 
 import ar.edu.itba.pod.client.notification.utils.NotificationParams;
-import ar.edu.itba.pod.client.utils.AbstractParams;
 import ar.edu.itba.pod.client.utils.Action;
 import ar.edu.itba.pod.grpc.notification.NotificationRequest;
 import ar.edu.itba.pod.grpc.notification.NotificationServiceGrpc;
