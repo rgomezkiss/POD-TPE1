@@ -37,21 +37,25 @@ public class CapacityAction implements Action<ConsultParams> {
     }
 
     private void writeToFile(final List<SuggestedCapacity> suggestedCapacities, final String path) {
-        try {
-            final Path filePath = Paths.get(path);
+        if(!suggestedCapacities.isEmpty()) {
+            try {
+                final Path filePath = Paths.get(path);
 
-            final List<String> lines = suggestedCapacities.stream()
-                    .map(capacity -> String.format("%s | %7d | %s",
-                            capacity.getMaxCapSlot(),
-                            capacity.getSuggestedCapacity(),
-                            capacity.getAttractionName()))
-                    .collect(Collectors.toList());
+                final List<String> lines = suggestedCapacities.stream()
+                        .map(capacity -> String.format("%s | %7d | %s",
+                                capacity.getMaxCapSlot(),
+                                capacity.getSuggestedCapacity(),
+                                capacity.getAttractionName()))
+                        .collect(Collectors.toList());
 
-            lines.add(0, "Slot  | Capacity | Attraction");
+                lines.add(0, "Slot  | Capacity | Attraction");
 
-            Files.write(filePath, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException e) {
-            logger.error("Error while writing in file: {}", e.getMessage());
+                Files.write(filePath, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+            } catch (IOException e) {
+                logger.error("Error while writing in file: {}", e.getMessage());
+            }
+        } else {
+            System.out.println("There are no attractions");
         }
     }
 }

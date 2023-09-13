@@ -36,22 +36,26 @@ public class ConfirmedAction implements Action<ConsultParams> {
     }
 
     private void writeToFile(final List<BookingResponse> bookingList, final String path) {
-        try {
-            final Path filePath = Paths.get(path);
+        if (!bookingList.isEmpty()){
+            try {
+                final Path filePath = Paths.get(path);
 
-            final List<String> lines = bookingList.stream()
-                    .map(booking -> String.format("%s | %s | %s",
-                            booking.getTimeSlot(),
-                            booking.getUUID(),
-                            booking.getAttractionName()
-                     ))
-                    .collect(Collectors.toList());
+                final List<String> lines = bookingList.stream()
+                        .map(booking -> String.format("%s | %s | %s",
+                                booking.getTimeSlot(),
+                                booking.getUUID(),
+                                booking.getAttractionName()
+                         ))
+                        .collect(Collectors.toList());
 
-            lines.add(0, "Slot  | Visitor | Attraction");
+                lines.add(0, "Slot  | Visitor | Attraction");
 
-            Files.write(filePath, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException e) {
-            logger.error("Error while writing in file: {}", e.getMessage());
+                Files.write(filePath, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+            } catch (IOException e) {
+                logger.error("Error while writing in file: {}", e.getMessage());
+            }
+        } else {
+            System.out.println("There are no bookings");
         }
     }
 }
