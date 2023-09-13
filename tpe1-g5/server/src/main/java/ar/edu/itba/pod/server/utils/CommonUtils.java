@@ -30,6 +30,12 @@ public class CommonUtils {
     public final static String ALREADY_UNFOLLOWING = "Already unfollowing";
     public final static String NEGATIVE_SLOT = "Slot size must be a positive number";
     public final static String SLOT_SIZE_NOT_ENOUGH = "Slot size not enough";
+    public final static String CONFIRMED = "CONFIRMED";
+    public final static String CANCELLED = "CANCELLED";
+    public final static String PENDING = "PENDING";
+    public final static String BOOK_STATUS = "The reservation for %s at %s on the day %d is %s";
+    public final static String CAPACITY_ANNOUNCED = "%s announced slot capacity for the day %d: %d places";
+    public final static String MOVED_BOOK = "The reservation for %s at %s on the day %d was moved to %s and is PENDING";
 
     public static LocalTime parseTime(final String time){
         try {

@@ -40,13 +40,6 @@ public class ParkData {
         return attractions;
     }
 
-    private final static String CONFIRMED = "CONFIRMED";
-    private final static String CANCELLED = "CANCELLED";
-    private final static String PENDING = "PENDING";
-    private final static String BOOK_STATUS = "The reservation for %s at %s on the day %d is %s";
-    private final static String CAPACITY_ANNOUNCED = "%s announced slot capacity for the day %d: %d places";
-    private final static String MOVED_BOOK = "The reservation for %s at %s on the day %d was moved to %s and is PENDING";
-
     /**
      * ParkAdminService methods
      **/
@@ -105,7 +98,7 @@ public class ParkData {
 
         capacities.get(attraction).put(request.getDay(), request.getCapacity());
 
-        Semaphore semaphore = getOrAddSemaphore(attraction, request.getDay());
+        final Semaphore semaphore = getOrAddSemaphore(attraction, request.getDay());
         AddSlotResponse response = AddSlotResponse.newBuilder().build();
 
         try {
@@ -149,8 +142,7 @@ public class ParkData {
                 currentBooking.setConfirmedTime(LocalDateTime.now());
 
                 // Notificamos que se cargo la capacidad Y que se confirmo la reserva
-                notifyIfCapacityIsAnnounced(attraction, day, capacity, currentBooking, CONFIRMED);
-
+                notifyIfCapacityIsAnnounced(attraction, day, capacity, currentBooking, CommonUtils.CONFIRMED);
                 confirmed++;
             }
 
@@ -175,7 +167,7 @@ public class ParkData {
                 capacityBookings.get(nextAvailableTime).add(booking);
                 relocated++;
             } else {
-                notifyIfCapacityIsAnnounced(attraction, day, capacity, booking, CANCELLED);
+                notifyIfCapacityIsAnnounced(attraction, day, capacity, booking, CommonUtils.CANCELLED);
                 tickets.get(booking.getUserId()).get(booking.getDay()).cancelBook();
                 cancelled++;
             }
@@ -271,16 +263,13 @@ public class ParkData {
         }
 
         final LocalTime endTime = CommonUtils.parseTime(request.getTimeRangeEnd());
-
         final List<AvailabilityResponse> availabilityResponses = new ArrayList<>();
 
         if (endTime == null){
             availabilityResponses.add(getAvailability(request.getAttractionName(), request.getDay(), startTime));
-        }
-        else if (request.getAttractionName().isEmpty()) {
+        } else if (request.getAttractionName().isEmpty()) {
             availabilityResponses.addAll(getAvailability(request.getDay(), startTime, endTime));
-        }
-        else {
+        } else {
             availabilityResponses.addAll(getAvailability(request.getAttractionName(), request.getDay(), startTime, endTime));
         }
 
@@ -354,11 +343,11 @@ public class ParkData {
             throw new NotFoundException(CommonUtils.CAPACITY_NOT_ASSIGNED);
         }
 
-        Semaphore semaphore = getOrAddSemaphore(attraction, booking.getDay());
+        final Semaphore semaphore = getOrAddSemaphore(attraction, booking.getDay());
 
         try {
             semaphore.acquire();
-            ServerBooking toConfirmBook = bookings
+            final ServerBooking toConfirmBook = bookings
                     .get(attraction)
                     .get(booking.getDay())
                     .getOrDefault(booking.getSlot(), new ArrayList<>())
@@ -371,7 +360,7 @@ public class ParkData {
                 throw new AlreadyExistsException(CommonUtils.BOOKING_ALREADY_CONFIRMED);
             }
 
-            notifyBookStatus(toConfirmBook, CONFIRMED);
+            notifyBookStatus(toConfirmBook, CommonUtils.CONFIRMED);
             toConfirmBook.setConfirmed(true);
             toConfirmBook.setConfirmedTime(LocalDateTime.now());
         } catch (InterruptedException e) {
@@ -393,12 +382,12 @@ public class ParkData {
         validateTimeSlot(attraction,booking.getSlot());
         final ServerTicket ticket = validateTicketExists(booking.getUserId(), booking.getDay());
 
-        Semaphore semaphore = getOrAddSemaphore(attraction, booking.getDay());
+        final Semaphore semaphore = getOrAddSemaphore(attraction, booking.getDay());
 
         try {
             semaphore.acquire();
             if (bookings.get(attraction).get(booking.getDay()).getOrDefault(booking.getSlot(), new ArrayList<>()).remove(booking)) {
-                notifyBookStatus(booking, CANCELLED);
+                notifyBookStatus(booking, CommonUtils.CANCELLED);
                 ticket.cancelBook();
             }
             else {
@@ -527,13 +516,15 @@ public class ParkData {
 
         if (booking.isConfirmed()) {
             observer.onNext(StringValue.newBuilder().setValue(
-                    String.format(BOOK_STATUS, booking.getAttractionName(), booking.getSlot().toString(),booking.getDay(), CONFIRMED)
+                    String.format(CommonUtils.BOOK_STATUS, booking.getAttractionName(),
+                            booking.getSlot().toString(),booking.getDay(), CommonUtils.CONFIRMED)
             ).build());
             observer.onCompleted();
             return;
         }
         observer.onNext(StringValue.newBuilder().setValue(
-                String.format(BOOK_STATUS, booking.getAttractionName(), booking.getSlot().toString(),booking.getDay(), PENDING)
+                String.format(CommonUtils.BOOK_STATUS, booking.getAttractionName(),
+                        booking.getSlot().toString(),booking.getDay(), CommonUtils.PENDING)
         ).build());
         observers.put(booking, observer);
     }
@@ -587,17 +578,18 @@ public class ParkData {
 
     // Notificar en caso de reserva cancelada o confirmada al anunciar capacidad
     // Se hace onCompleted y remove del observer
-    private void notifyIfCapacityIsAnnounced(final ServerAttraction attraction, final Integer day, final Integer capacity, final ServerBooking booking,
-                                             final String message
+    private void notifyIfCapacityIsAnnounced(final ServerAttraction attraction, final Integer day, final Integer capacity,
+                                             final ServerBooking booking, final String message
     ) {
-        StreamObserver<StringValue> currentObserver = observers.get(booking);
+        final StreamObserver<StringValue> currentObserver = observers.get(booking);
 
         if (currentObserver != null) {
             currentObserver.onNext(StringValue.newBuilder()
-                    .setValue(String.format(CAPACITY_ANNOUNCED, attraction.getAttractionName(), day, capacity))
+                    .setValue(String.format(CommonUtils.CAPACITY_ANNOUNCED, attraction.getAttractionName(), day, capacity))
                     .build());
             currentObserver.onNext(StringValue.newBuilder()
-                    .setValue(String.format(BOOK_STATUS, booking.getAttractionName(), booking.getSlot().toString(), booking.getDay(), message))
+                    .setValue(String.format(CommonUtils.BOOK_STATUS, booking.getAttractionName(), booking.getSlot().toString(),
+                            booking.getDay(), message))
                     .build());
             currentObserver.onCompleted();
             observers.remove(booking);
@@ -605,15 +597,17 @@ public class ParkData {
     }
 
     // Notificar en caso de reserva movida
-    private void notifyIfCapacityIsAnnounced(final ServerAttraction attraction, final Integer day, final Integer capacity, final ServerBooking booking, final LocalTime newSlot) {
-        StreamObserver<StringValue> currentObserver = observers.get(booking);
+    private void notifyIfCapacityIsAnnounced(final ServerAttraction attraction, final Integer day, final Integer capacity,
+                                             final ServerBooking booking, final LocalTime newSlot) {
+        final StreamObserver<StringValue> currentObserver = observers.get(booking);
 
         if (currentObserver != null) {
             currentObserver.onNext(StringValue.newBuilder()
-                    .setValue(String.format(CAPACITY_ANNOUNCED, attraction.getAttractionName(), day, capacity))
+                    .setValue(String.format(CommonUtils.CAPACITY_ANNOUNCED, attraction.getAttractionName(), day, capacity))
                     .build());
             currentObserver.onNext(StringValue.newBuilder()
-                    .setValue(String.format(MOVED_BOOK, booking.getAttractionName(), booking.getSlot().toString(), booking.getDay(), newSlot.toString()))
+                    .setValue(String.format(CommonUtils.MOVED_BOOK, booking.getAttractionName(), booking.getSlot().toString(),
+                            booking.getDay(), newSlot.toString()))
                     .build());
         }
     }
@@ -624,7 +618,7 @@ public class ParkData {
         // Notificamos que se cargo la capacidad Y que se confirmo la reserva
         if (observer != null) {
             observer.onNext(StringValue.newBuilder().setValue(
-                    String.format(BOOK_STATUS, booking.getAttractionName(), booking.getSlot().toString(), booking.getDay(), message)
+                    String.format(CommonUtils.BOOK_STATUS, booking.getAttractionName(), booking.getSlot().toString(), booking.getDay(), message)
             ).build());
 
             if (booking.isConfirmed()) {
