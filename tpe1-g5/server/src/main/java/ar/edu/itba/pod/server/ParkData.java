@@ -130,13 +130,10 @@ public class ParkData {
         return response;
     }
 
-    //Para cada slot
-    //del día (en orden cronológico) y en función de la capacidad indicada se deberán
+    //Para cada slot del día (en orden cronológico) y en función de la capacidad indicada se deberán
     //primero confirmar todas las reservas posibles teniendo en cuenta el orden de la
-    //realización de la reserva (priorizando a las primeras N reservas realizadas siendo N
-    //la capacidad del slot). Luego, para cada slot del día (en orden cronológico), y de
-    //existir todavía reservas pendientes, se deberán intentar reubicar esas reservas en
-    //otros slots “cercanos” del mismo día, siempre considerando la capacidad de cada slot.
+    //realización de la reserva. Luego, de existir todavía reservas pendientes, se deberán
+    // intentar reubicar esas reservas en otros slots “cercanos” del mismo día
     private AddSlotResponse reorganizeBookings(final ServerAttraction attraction, final Integer day, final Integer capacity) {
         final Map<Integer, Map<LocalTime, List<ServerBooking>>> attractionBookings = bookings.get(attraction);
         final Map<LocalTime, List<ServerBooking>> capacityBookings = attractionBookings.getOrDefault(day, new HashMap<>());
@@ -187,12 +184,11 @@ public class ParkData {
                 // Caso límite 2
                 // Al relocar la reserva, caemos a un horario donde ya se tiene una reserva.
                 // Aunque haya más horarios posteriores, se cancela para dar prioridad a otros cambios
-                if (!validateTicketExists(booking.getUserId(), day).canRelocate(nextAvailableTime) || capacityBookings.getOrDefault(nextAvailableTime, new ArrayList<>()).contains(booking)) {
+                if (!validateTicketExists(booking.getUserId(), day).canRelocate(nextAvailableTime)
+                        || capacityBookings.getOrDefault(nextAvailableTime, new ArrayList<>()).contains(booking)) {
                     notifyBookStatus(booking, CommonUtils.CANCELLED);
                     cancelled++;
-                }
-                // Se puede relocar correctamente
-                else {
+                } else {      // Se puede relocar correctamente
                     capacityBookings.putIfAbsent(nextAvailableTime, new LinkedList<>());
                     capacityBookings.get(nextAvailableTime).add(booking);
                     relocated++;
