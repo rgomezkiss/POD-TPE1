@@ -1,5 +1,6 @@
 package ar.edu.itba.pod.server;
 
+import ar.edu.itba.pod.grpc.booking.AttractionResponse;
 import ar.edu.itba.pod.grpc.booking.AvailabilityResponse;
 import ar.edu.itba.pod.grpc.notification.NotificationRequest;
 import ar.edu.itba.pod.grpc.booking.GetAvailabilityRequest;
@@ -21,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class ParkData {
     // Attraction -> Day -> TimeSlot -> List<Book>
@@ -35,10 +37,6 @@ public class ParkData {
     private final Map<ServerAttraction, Map<Integer, Semaphore>> semaphores = new ConcurrentHashMap<>();
     // Booking -> Observer
     private final Map<ServerBooking, StreamObserver<StringValue>> observers = new ConcurrentHashMap<>();
-
-    public Map<String, ServerAttraction> getAttractions() {
-        return attractions;
-    }
 
     /**
      * ParkAdminService methods
@@ -249,12 +247,26 @@ public class ParkData {
         }
     }
 
+    public List<AttractionResponse> getAttractions() {
+        return attractions.values()
+                .stream()
+                .map(attraction -> AttractionResponse.newBuilder()
+                        .setAttractionName(attraction.getAttractionName())
+                        .setOpeningTime(attraction.getOpeningTime().toString())
+                        .setClosingTime(attraction.getClosingTime().toString())
+                        .build()
+                )
+                .sorted(Comparator.comparing(AttractionResponse::getAttractionName))
+                .collect(Collectors.toList());
+    }
+
     public List<AvailabilityResponse> getAvailability(final GetAvailabilityRequest request) {
         // Falla
         // si no existe una atracción con ese nombre --
         // si el día es inválido --
         // si el slot es inálido --
         // si el rango de slot es inválido --
+        // El orden de impresión es cronológico y desempata alfabéticamente por el nombre de la atracción --
 
         final LocalTime startTime = CommonUtils.parseTime(request.getTimeRangeStart());
 
@@ -272,6 +284,14 @@ public class ParkData {
         } else {
             availabilityResponses.addAll(getAvailability(request.getAttractionName(), request.getDay(), startTime, endTime));
         }
+
+        availabilityResponses.sort((response1, response2) -> {
+            final int slotComparison = response1.getSlot().compareTo(response2.getSlot());
+            if (slotComparison == 0) {
+                return response1.getAttractionName().compareTo(response2.getAttractionName());
+            }
+            return slotComparison;
+        });
 
         return availabilityResponses;
     }
