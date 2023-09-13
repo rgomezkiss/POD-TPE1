@@ -57,10 +57,10 @@ public class ServerAttraction {
         }
     }
 
-    public LocalTime getSlotsInRange(LocalTime startTime, LocalTime endTime) {
+    public LocalTime getSlotsInRange(LocalTime startTime) {
         LocalTime currentTime = openingTime;
 
-        while (!currentTime.isAfter(closingTime) && !currentTime.isAfter(endTime)) {
+        while (!currentTime.isAfter(startTime)) {
             currentTime = currentTime.plusMinutes(this.slotSize);
         }
 

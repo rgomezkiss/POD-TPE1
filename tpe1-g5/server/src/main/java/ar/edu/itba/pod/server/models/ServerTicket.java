@@ -30,6 +30,14 @@ public class ServerTicket {
         };
     }
 
+    public boolean canRelocate(LocalTime timeSlot) {
+        return switch (this.ticketType) {
+            case UNLIMITED, THREE -> true;
+            case HALF_DAY -> timeSlot.isBefore(LocalTime.of(14, 0));
+            default -> false;
+        };
+    }
+
     public int getBookings() {
         return bookings;
     }

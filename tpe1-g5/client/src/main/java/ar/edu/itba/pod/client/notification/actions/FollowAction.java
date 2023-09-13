@@ -37,6 +37,7 @@ public class FollowAction implements Action<NotificationParams> {
             }
             // Cierra el canal una vez que se ha recibido onCompleted o después de esperar un tiempo razonable.
             channel.shutdown();
+            logger.info("Communication finished");
         }
     }
 
@@ -56,7 +57,7 @@ public class FollowAction implements Action<NotificationParams> {
 
         @Override
         public void onError(Throwable t) {
-            logger.error("Error in communication: {}", t.getMessage());
+            completedSignal.set(true);
         }
 
         @Override

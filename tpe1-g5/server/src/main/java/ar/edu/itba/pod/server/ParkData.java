@@ -180,13 +180,24 @@ public class ParkData {
 
             if (nextAvailableTime != null) {
                 notifyIfCapacityIsAnnounced(attraction, day, capacity, booking, nextAvailableTime);
-
-                //TODO: validar caso límite de HALF_DAY movido a post 14:00
-
                 booking.setSlot(nextAvailableTime);
-                capacityBookings.putIfAbsent(nextAvailableTime, new LinkedList<>());
-                capacityBookings.get(nextAvailableTime).add(booking);
-                relocated++;
+
+                // Caso límite 1
+                // Al relocar la reserva, nos excedemos de la validez de HALF_DAY
+                // Caso límite 2
+                // Al relocar la reserva, caemos a un horario donde ya se tiene una reserva.
+                // Aunque haya más horarios posteriores, se cancela para dar prioridad a otros cambios
+                if (!validateTicketExists(booking.getUserId(), day).canRelocate(nextAvailableTime) || capacityBookings.getOrDefault(nextAvailableTime, new ArrayList<>()).contains(booking)) {
+                    notifyBookStatus(booking, CommonUtils.CANCELLED);
+                    cancelled++;
+                }
+                // Se puede relocar correctamente
+                else {
+                    capacityBookings.putIfAbsent(nextAvailableTime, new LinkedList<>());
+                    capacityBookings.get(nextAvailableTime).add(booking);
+                    relocated++;
+                }
+
             } else {
                 notifyIfCapacityIsAnnounced(attraction, day, capacity, booking, CommonUtils.CANCELLED);
                 tickets.get(booking.getUserId()).get(booking.getDay()).cancelBook();
@@ -264,7 +275,7 @@ public class ParkData {
                 logger.error("book() - Interrupted semaphore");
                 Thread.currentThread().interrupt();
             } finally {
-                logger.debug("book() - Interrupted released");
+                logger.debug("book() - Semaphore released");
                 semaphore.release();
             }
         } else {
@@ -340,7 +351,7 @@ public class ParkData {
 
     private List<AvailabilityResponse> getAvailability(final String attractionName, final int day, final LocalTime startTime, final LocalTime endTime) {
         final ServerAttraction attraction = validateAttractionExists(attractionName);
-        LocalTime currentSlot = attraction.getSlotsInRange(startTime, endTime);
+        LocalTime currentSlot = attraction.getSlotsInRange(startTime);
         final List<AvailabilityResponse> responses = new ArrayList<>();
 
         while (!currentSlot.isAfter(endTime)) {
@@ -410,10 +421,9 @@ public class ParkData {
                 semaphore.release();
                 throw new AlreadyExistsException(CommonUtils.BOOKING_ALREADY_CONFIRMED);
             }
-
-            notifyBookStatus(toConfirmBook, CommonUtils.CONFIRMED);
             toConfirmBook.setConfirmed(true);
             toConfirmBook.setConfirmedTime(LocalDateTime.now());
+            notifyBookStatus(toConfirmBook, CommonUtils.CONFIRMED);
         } catch (InterruptedException e) {
             logger.error("confirmBooking() - Semaphore interrupted!");
             Thread.currentThread().interrupt();
@@ -442,7 +452,7 @@ public class ParkData {
 
         try {
             semaphore.acquire();
-            if (bookings.get(attraction).get(booking.getDay()).getOrDefault(booking.getSlot(), new ArrayList<>()).remove(booking)) {
+            if (bookings.get(attraction).getOrDefault(booking.getDay(), new HashMap<>()).getOrDefault(booking.getSlot(), new ArrayList<>()).remove(booking)) {
                 notifyBookStatus(booking, CommonUtils.CANCELLED);
                 ticket.cancelBook();
             }
@@ -533,7 +543,12 @@ public class ParkData {
 
                 // Agregamos todas las reservas del día a una lista temporal para despues ordenarlas
                 final List<ServerBooking> allBookingsAtDay = new ArrayList<>();
-                reservationsByTime.values().forEach(allBookingsAtDay::addAll);
+
+                reservationsByTime.values().forEach(list -> list.forEach(booking -> {
+                    if (booking.isConfirmed()) {
+                        allBookingsAtDay.add(booking);
+                    }
+                }));
                 allBookingsAtDay.sort(Comparator.comparing(ServerBooking::getConfirmedTime));
 
                 allBookingsAtDay.forEach(booking -> {

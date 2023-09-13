@@ -49,7 +49,7 @@ public class CapacityAction implements Action<ConsultParams> {
 
             lines.add(0, "Slot  | Capacity | Attraction");
 
-            Files.write(filePath, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            Files.write(filePath, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             logger.error("Error while writing in file: {}", e.getMessage());
         }
