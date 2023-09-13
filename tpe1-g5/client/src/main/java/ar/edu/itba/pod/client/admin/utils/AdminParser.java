@@ -1,6 +1,7 @@
 package ar.edu.itba.pod.client.admin.utils;
 
 import ar.edu.itba.pod.client.admin.actions.AdminActions;
+import ar.edu.itba.pod.client.utils.Parser;
 import ar.edu.itba.pod.client.utils.ServerAddress;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
@@ -8,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
-public class AdminParser {
+public class AdminParser implements Parser<AdminParams> {
 
     private final Logger logger = LoggerFactory.getLogger(AdminParser.class);
     private final CommandLineParser parser = new DefaultParser();
@@ -30,6 +31,7 @@ public class AdminParser {
     }
 
     // -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName [ -DinPath=filename | -Dride=rideName | -Dday=dayOfYear | -Dcapacity=amount ]
+    @Override
     public AdminParams parse(String[] args) {
         try {
             final CommandLine cmd = parser.parse(options, args);

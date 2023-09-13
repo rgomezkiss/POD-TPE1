@@ -1,12 +1,13 @@
 package ar.edu.itba.pod.client.consult.utils;
 
 import ar.edu.itba.pod.client.consult.actions.ConsultActions;
+import ar.edu.itba.pod.client.utils.Parser;
 import ar.edu.itba.pod.client.utils.ServerAddress;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConsultParser {
+public class ConsultParser implements Parser<ConsultParams> {
 
     private final Logger logger = LoggerFactory.getLogger(ConsultParser.class);
     private final CommandLineParser parser = new DefaultParser();
@@ -24,6 +25,7 @@ public class ConsultParser {
     }
 
     // -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName -Dday=dayOfYear -Dride=rideName -Dvisitor=visitorId
+    @Override
     public ConsultParams parse(String[] args) {
         try {
             final CommandLine cmd = parser.parse(options, args);

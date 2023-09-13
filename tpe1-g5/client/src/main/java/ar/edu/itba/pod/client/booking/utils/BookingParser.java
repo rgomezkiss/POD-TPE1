@@ -1,12 +1,13 @@
 package ar.edu.itba.pod.client.booking.utils;
 
 import ar.edu.itba.pod.client.booking.actions.BookingActions;
+import ar.edu.itba.pod.client.utils.Parser;
 import ar.edu.itba.pod.client.utils.ServerAddress;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BookingParser {
+public class BookingParser implements Parser<BookingParams> {
 
     private final Logger logger = LoggerFactory.getLogger(BookingParser.class);
     private final CommandLineParser parser = new DefaultParser();
@@ -30,6 +31,7 @@ public class BookingParser {
     }
 
     // -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName [ -Dday=dayOfYear -Dride=rideName -Dvisitor=visitorId -Dslot=bookingSlot -DslotTo=bookingSlotTo ]
+    @Override
     public BookingParams parse(String[] args) {
         try {
             final CommandLine cmd = parser.parse(options, args);

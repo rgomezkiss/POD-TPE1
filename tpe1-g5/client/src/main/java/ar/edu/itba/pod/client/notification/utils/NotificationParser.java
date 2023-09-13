@@ -1,12 +1,13 @@
 package ar.edu.itba.pod.client.notification.utils;
 
 import ar.edu.itba.pod.client.notification.actions.NotificationActions;
+import ar.edu.itba.pod.client.utils.Parser;
 import ar.edu.itba.pod.client.utils.ServerAddress;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NotificationParser {
+public class NotificationParser implements Parser<NotificationParams> {
     private final Logger logger = LoggerFactory.getLogger(NotificationParser.class);
     private final CommandLineParser parser = new DefaultParser();
     private final Options options = new Options();
@@ -25,6 +26,7 @@ public class NotificationParser {
     }
 
     // -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName -Dday=dayOfYear -DoutPath=output.txt
+    @Override
     public NotificationParams parse(String[] args) {
         try {
             final CommandLine cmd = parser.parse(options, args);
@@ -80,5 +82,4 @@ public class NotificationParser {
             return null;
         }
     }
-
 }
