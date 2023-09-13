@@ -19,15 +19,15 @@ mvn clean install
 ```
 
 Tras esto, en las carpetas /client/target y /server/target se generarán tp1-g5-client-1.0-SNAPSHOT-bin.tar.gz y tp1-g5-server-1.0-SNAPSHOT-bin.tar.gz
-Dichos .tar.gaz se deberán comprimir utilizando el siguiente comando:
+Dichos .tar.gz, los cuales se deberán descomprimir utilizando el siguiente comando:
 
 ```bash
-tar -xzvf nombre-del-archivo.tar.gz
+tar -xzvf <nombre-del-archivo>.tar.gz
 ```
 
 ## Ejecución
 
-Una vez descomprimidos los .tar.gz anteriores, podremos ejecutar el siguiente servicio y clientes.
+Tras haber realizado lo anterior, podremos ejecutar el siguiente servicio y los clientes. Asegurarse de otorgar permisos de ejecución a los ejecutables.
 
 ### Servicios
 
@@ -49,7 +49,7 @@ Para probar el sistema, se implementan cuatro programas cliente (cada uno coinci
 #### Cliente de Administración del Parque
 
 ```sh
-./admin-cli -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName [ -DinPath=filename | -Dride=rideName | -Dday=dayOfYear | -Dcapacity=amount ]
+./admin-cli.sh -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName [ -DinPath=filename | -Dride=rideName | -Dday=dayOfYear | -Dcapacity=amount ]
 ```
 
 | Argumento          | Descripción                                                                                                   |
@@ -68,7 +68,7 @@ Para probar el sistema, se implementan cuatro programas cliente (cada uno coinci
 #### Cliente de Reserva de Atracciones
 
 ```sh
-./book-cli -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName [ -Dday=dayOfYear -Dride=rideName -Dvisitor=visitorId -Dslot=bookingSlot -DslotTo=bookingSlotTo ]
+./book-cli.sh -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName [ -Dday=dayOfYear -Dride=rideName -Dvisitor=visitorId -Dslot=bookingSlot -DslotTo=bookingSlotTo ]
 ```
 
 | Argumento         | Descripción                                                                                                                   |
@@ -94,7 +94,7 @@ Para probar el sistema, se implementan cuatro programas cliente (cada uno coinci
 #### Cliente de Notificaciones de una Atracción
 
 ```sh
-./notif-cli -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName -Dday=dayOfYear -Dride=rideName -Dvisitor=visitorId
+./notif-cli.sh -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName -Dday=dayOfYear -Dride=rideName -Dvisitor=visitorId
 ```
 
 | Argumento         | Descripción                                                                               |
@@ -111,7 +111,7 @@ Para probar el sistema, se implementan cuatro programas cliente (cada uno coinci
 #### Cliente de Consulta
 
 ```sh
-./query-cli -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName -Dday=dayOfYear -DoutPath=output.txt 
+./query-cli.sh -DserverAddress=xx.xx.xx.xx:yyyy -Daction=actionName -Dday=dayOfYear -DoutPath=output.txt 
 ```
 
 | Argumento         | Descripción                                                                          |
