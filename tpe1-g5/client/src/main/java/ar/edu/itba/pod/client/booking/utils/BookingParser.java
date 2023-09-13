@@ -82,6 +82,9 @@ public class BookingParser {
                     if (cmd.hasOption(SLOT_TO)) {
                         slotTo = cmd.getOptionValue(SLOT_TO);
                     }
+                    else {
+                        slotTo = "";
+                    }
 
                     return new BookingParams(serverAddress, String.valueOf(action), day, ride, slot, slotTo, null);
                 }
@@ -110,8 +113,8 @@ public class BookingParser {
                     if (cmd.hasOption(RIDE)) {
                         ride = cmd.getOptionValue(RIDE);
                     } else {
-                        System.out.println("Ride name is required for this action");
-                        logger.error("Ride name is required for this action");
+                        System.out.println("Attraction name is required for this action");
+                        logger.error("Attraction name is required for this action");
                         return null;
                     }
 

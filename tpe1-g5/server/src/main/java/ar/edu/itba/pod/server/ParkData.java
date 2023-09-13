@@ -18,6 +18,7 @@ import io.grpc.stub.StreamObserver;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,10 +27,13 @@ public class ParkData {
     private final Map<ServerAttraction, Map<Integer, Map<LocalTime, List<ServerBooking>>>> bookings = new ConcurrentHashMap<>();
     // Attraction -> Day -> Capacity
     private final Map<ServerAttraction, Map<Integer, Integer>> capacities = new ConcurrentHashMap<>();
-    //AttractionName -> ServerAttraction
+    // AttractionName -> ServerAttraction
     private final Map<String, ServerAttraction> attractions = new ConcurrentHashMap<>();
-    //UserId -> Day -> Ticket
+    // UserId -> Day -> Ticket
     private final Map<UUID, Map<Integer, ServerTicket>> tickets = new ConcurrentHashMap<>();
+    // Attraction -> Dia -> Semaphore
+    private final Map<ServerAttraction, Map<Integer, Semaphore>> semaphores = new ConcurrentHashMap<>();
+    // Booking -> Observer
     private final Map<ServerBooking, StreamObserver<StringValue>> observers = new ConcurrentHashMap<>();
 
     public Map<String, ServerAttraction> getAttractions() {
@@ -56,9 +60,12 @@ public class ParkData {
             throw new AlreadyExistsException(CommonUtils.ATTRACTION_ALREADY_EXISTS);
         }
 
-        attractions.put(attraction.getAttractionName(), attraction);
-        bookings.put(attraction, new ConcurrentHashMap<>());
-        capacities.put(attraction, new ConcurrentHashMap<>());
+        synchronized (attraction) {
+            attractions.put(attraction.getAttractionName(), attraction);
+            bookings.put(attraction, new ConcurrentHashMap<>());
+            capacities.put(attraction, new ConcurrentHashMap<>());
+            semaphores.put(attraction, new ConcurrentHashMap<>());
+        }
     }
 
     public void addTicket(final ServerTicket ticket) {
@@ -72,8 +79,10 @@ public class ParkData {
             throw new AlreadyExistsException(CommonUtils.TICKET_ALREADY_EXISTS);
         }
 
-        tickets.putIfAbsent(ticket.getUserId(), new ConcurrentHashMap<>());
-        tickets.get(ticket.getUserId()).put(ticket.getDay(), ticket);
+        synchronized (ticket) {
+            tickets.putIfAbsent(ticket.getUserId(), new ConcurrentHashMap<>());
+            tickets.get(ticket.getUserId()).put(ticket.getDay(), ticket);
+        }
     }
 
     public AddSlotResponse addSlot(final AddSlotRequest request) {
@@ -96,7 +105,19 @@ public class ParkData {
 
         capacities.get(attraction).put(request.getDay(), request.getCapacity());
 
-        return reorganizeBookings(attraction, request.getDay(), request.getCapacity());
+        Semaphore semaphore = getOrAddSemaphore(attraction, request.getDay());
+        AddSlotResponse response = AddSlotResponse.newBuilder().build();
+
+        try {
+            semaphore.acquire();
+            response = reorganizeBookings(attraction, request.getDay(), request.getCapacity());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            semaphore.release();
+        }
+
+        return response;
     }
 
     //Para cada slot
@@ -115,7 +136,6 @@ public class ParkData {
         int relocated = 0;
         int cancelled = 0;
 
-        StreamObserver<StringValue> currentObserver;
 
         // Recorremos las reservas y los horarios disponibles
         for (Map.Entry<LocalTime, List<ServerBooking>> entry : capacityBookings.entrySet()) {
@@ -128,10 +148,8 @@ public class ParkData {
                 currentBooking.setConfirmed(true);
                 currentBooking.setConfirmedTime(LocalDateTime.now());
 
-                currentObserver = observers.get(currentBooking);
-
                 // Notificamos que se cargo la capacidad Y que se confirmo la reserva
-                notifyIfCapacityIsAnnounced(attraction, day, capacity, currentObserver, currentBooking, CONFIRMED);
+                notifyIfCapacityIsAnnounced(attraction, day, capacity, currentBooking, CONFIRMED);
 
                 confirmed++;
             }
@@ -139,15 +157,6 @@ public class ParkData {
             // Agregamos las excedentes a la lista de reservas a mover
             for (int i = capacity; i < reservations.size(); i++) {
                 currentBooking = reservations.get(i);
-                currentObserver = observers.get(currentBooking);
-
-                // Notificamos que se cargo la capacidad
-                if (currentObserver != null) {
-                    currentObserver.onNext(StringValue.newBuilder()
-                            .setValue(String.format(CAPACITY_ANNOUNCED, attraction.getAttractionName(), day, capacity))
-                            .build());
-                }
-
                 toMove.add(currentBooking);
             }
             reservations.subList(capacity, reservations.size()).clear();
@@ -156,21 +165,17 @@ public class ParkData {
         for (ServerBooking booking : toMove) {
             final LocalTime nextAvailableTime = getNextAvailableTime(capacityBookings, booking.getSlot(), attraction, capacity);
 
-            currentObserver = observers.get(booking);
             if (nextAvailableTime != null) {
+                notifyIfCapacityIsAnnounced(attraction, day, capacity, booking, nextAvailableTime);
 
-                if (currentObserver != null) {
-                    currentObserver.onNext(StringValue.newBuilder()
-                            .setValue(String.format(MOVED_BOOK, attraction.getAttractionName(), booking.getSlot().toString(), day, nextAvailableTime.toString()))
-                            .build());
-                }
+                //TODO: validar caso límite de HALF_DAY movido a post 14:00
 
                 booking.setSlot(nextAvailableTime);
                 capacityBookings.putIfAbsent(nextAvailableTime, new LinkedList<>());
                 capacityBookings.get(nextAvailableTime).add(booking);
                 relocated++;
             } else {
-                notifyIfCapacityIsAnnounced(attraction, day, capacity, currentObserver, booking, CANCELLED);
+                notifyIfCapacityIsAnnounced(attraction, day, capacity, booking, CANCELLED);
                 tickets.get(booking.getUserId()).get(booking.getDay()).cancelBook();
                 cancelled++;
             }
@@ -211,31 +216,45 @@ public class ParkData {
         validateTimeSlot(attraction, booking.getSlot());
 
         if (ticket.canBook(booking.getSlot())) {
-            final int day = booking.getDay();
-            final Integer capacity = getDayCapacity(attraction, day);
-            bookings.get(attraction).putIfAbsent(day, new ConcurrentHashMap<>());
-            bookings.get(attraction).get(day).putIfAbsent(booking.getSlot(), new LinkedList<>());
+            final Semaphore semaphore = getOrAddSemaphore(attraction, booking.getDay());
 
-            final List<ServerBooking> books = bookings.get(attraction).get(day).get(booking.getSlot());
+            try {
+                semaphore.acquire();
 
-            if (capacity != null) {
-                if (books.size() < capacity) {
-                    if (books.contains(booking)) {
-                        throw new AlreadyExistsException(CommonUtils.BOOKING_ALREADY_EXISTS);
+                final int day = booking.getDay();
+                final Integer capacity = getDayCapacity(attraction, day);
+                bookings.get(attraction).putIfAbsent(day, new ConcurrentHashMap<>());
+                bookings.get(attraction).get(day).putIfAbsent(booking.getSlot(), new LinkedList<>());
+
+                final List<ServerBooking> books = bookings.get(attraction).get(day).get(booking.getSlot());
+
+                if (capacity != null) {
+                    if (books.size() < capacity) {
+                        if (books.contains(booking)) {
+                            semaphore.release();
+                            throw new AlreadyExistsException(CommonUtils.BOOKING_ALREADY_EXISTS);
+                        }
+                        books.add(booking);
+                        booking.setConfirmed(true);
+                        booking.setConfirmedTime(LocalDateTime.now());
+                        ticket.book();
                     }
+                    semaphore.release();
+                    throw new UnavailableException(CommonUtils.CAPACITY_FULL_EXCEPTION);
+                } else {
                     books.add(booking);
-                    booking.setConfirmed(true);
-                    booking.setConfirmedTime(LocalDateTime.now());
                     ticket.book();
                 }
-                throw new UnavailableException(CommonUtils.CAPACITY_FULL_EXCEPTION);
-            } else {
-                books.add(booking);
-                ticket.book();
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                semaphore.release();
             }
         }
-
-        throw new InvalidException(CommonUtils.INVALID_BOOK_TYPE);
+        else {
+            throw new InvalidException(CommonUtils.INVALID_BOOK_TYPE);
+        }
     }
 
     public List<AvailabilityResponse> getAvailability(final GetAvailabilityRequest request) {
@@ -282,11 +301,12 @@ public class ParkData {
 
     private List<AvailabilityResponse> getAvailability(final String attractionName, final int day, final LocalTime startTime, final LocalTime endTime) {
         final ServerAttraction attraction = validateAttractionExists(attractionName);
-        final List<LocalTime> timeSlotsInRange = attraction.getSlotsInRange(startTime, endTime);
+        LocalTime currentSlot = attraction.getSlotsInRange(startTime, endTime);
         final List<AvailabilityResponse> responses = new ArrayList<>();
 
-        for (LocalTime slot : timeSlotsInRange) {
-            responses.add(getAvailability(attractionName, day, slot));
+        while (!currentSlot.isAfter(endTime)) {
+            responses.add(getAvailability(attractionName, day, currentSlot));
+            currentSlot = currentSlot.plusMinutes(attraction.getSlotSize());
         }
 
         return responses;
@@ -310,7 +330,7 @@ public class ParkData {
                 .setAttractionName(attractionName)
                 .setConfirmed(confirmed.get())
                 .setPending(pending.get())
-                .setCapacity(capacity)
+                .setCapacity(capacity == null ? 0 : capacity)
                 .setSlot(slot.toString())
                 .build();
     }
@@ -334,22 +354,31 @@ public class ParkData {
             throw new NotFoundException(CommonUtils.CAPACITY_NOT_ASSIGNED);
         }
 
-        ServerBooking toConfirmBook = bookings
-                .get(attraction)
-                .get(booking.getDay())
-                .getOrDefault(booking.getSlot(), new ArrayList<>())
-                .stream()
-                .filter(toFind -> toFind.equals(booking))
-                .findFirst().orElseThrow(() -> new NotFoundException(CommonUtils.BOOKING_NOT_FOUND));
+        Semaphore semaphore = getOrAddSemaphore(attraction, booking.getDay());
 
-        if (toConfirmBook.isConfirmed()) {
-            throw new AlreadyExistsException(CommonUtils.BOOKING_ALREADY_CONFIRMED);
+        try {
+            semaphore.acquire();
+            ServerBooking toConfirmBook = bookings
+                    .get(attraction)
+                    .get(booking.getDay())
+                    .getOrDefault(booking.getSlot(), new ArrayList<>())
+                    .stream()
+                    .filter(toFind -> toFind.equals(booking))
+                    .findFirst().orElseThrow(() -> new NotFoundException(CommonUtils.BOOKING_NOT_FOUND));
+
+            if (toConfirmBook.isConfirmed()) {
+                semaphore.release();
+                throw new AlreadyExistsException(CommonUtils.BOOKING_ALREADY_CONFIRMED);
+            }
+
+            notifyBookStatus(toConfirmBook, CONFIRMED);
+            toConfirmBook.setConfirmed(true);
+            toConfirmBook.setConfirmedTime(LocalDateTime.now());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            semaphore.release();
         }
-
-        notifyBookStatus(toConfirmBook, CONFIRMED);
-
-        toConfirmBook.setConfirmed(true);
-        toConfirmBook.setConfirmedTime(LocalDateTime.now());
     }
 
     public void cancelBooking(final ServerBooking booking) {
@@ -364,13 +393,24 @@ public class ParkData {
         validateTimeSlot(attraction,booking.getSlot());
         final ServerTicket ticket = validateTicketExists(booking.getUserId(), booking.getDay());
 
-        // Elimino la reserva si existía, y sino ya vuelvo
-        if (bookings.get(attraction).get(booking.getDay()).getOrDefault(booking.getSlot(), new ArrayList<>()).remove(booking)) {
-            notifyBookStatus(booking, CANCELLED);
-            ticket.cancelBook();
+        Semaphore semaphore = getOrAddSemaphore(attraction, booking.getDay());
+
+        try {
+            semaphore.acquire();
+            if (bookings.get(attraction).get(booking.getDay()).getOrDefault(booking.getSlot(), new ArrayList<>()).remove(booking)) {
+                notifyBookStatus(booking, CANCELLED);
+                ticket.cancelBook();
+            }
+            else {
+                semaphore.release();
+                throw new NotFoundException(CommonUtils.BOOKING_NOT_FOUND);
+            }
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            semaphore.release();
         }
-        // No existía la reserva
-        throw new NotFoundException(CommonUtils.BOOKING_NOT_FOUND);
     }
 
     private Integer getDayCapacity(final ServerAttraction attraction, final int day) {
@@ -545,10 +585,13 @@ public class ParkData {
         return null;
     }
 
-    private void notifyIfCapacityIsAnnounced(final ServerAttraction attraction, final Integer day, final Integer capacity,
-                                             final StreamObserver<StringValue> currentObserver, final ServerBooking booking,
+    // Notificar en caso de reserva cancelada o confirmada al anunciar capacidad
+    // Se hace onCompleted y remove del observer
+    private void notifyIfCapacityIsAnnounced(final ServerAttraction attraction, final Integer day, final Integer capacity, final ServerBooking booking,
                                              final String message
     ) {
+        StreamObserver<StringValue> currentObserver = observers.get(booking);
+
         if (currentObserver != null) {
             currentObserver.onNext(StringValue.newBuilder()
                     .setValue(String.format(CAPACITY_ANNOUNCED, attraction.getAttractionName(), day, capacity))
@@ -561,6 +604,20 @@ public class ParkData {
         }
     }
 
+    // Notificar en caso de reserva movida
+    private void notifyIfCapacityIsAnnounced(final ServerAttraction attraction, final Integer day, final Integer capacity, final ServerBooking booking, final LocalTime newSlot) {
+        StreamObserver<StringValue> currentObserver = observers.get(booking);
+
+        if (currentObserver != null) {
+            currentObserver.onNext(StringValue.newBuilder()
+                    .setValue(String.format(CAPACITY_ANNOUNCED, attraction.getAttractionName(), day, capacity))
+                    .build());
+            currentObserver.onNext(StringValue.newBuilder()
+                    .setValue(String.format(MOVED_BOOK, booking.getAttractionName(), booking.getSlot().toString(), booking.getDay(), newSlot.toString()))
+                    .build());
+        }
+    }
+
     private void notifyBookStatus(final ServerBooking booking, final String message) {
         final StreamObserver<StringValue> observer = observers.get(booking);
 
@@ -569,8 +626,11 @@ public class ParkData {
             observer.onNext(StringValue.newBuilder().setValue(
                     String.format(BOOK_STATUS, booking.getAttractionName(), booking.getSlot().toString(), booking.getDay(), message)
             ).build());
-            observer.onCompleted();
-            observers.remove(booking);
+
+            if (booking.isConfirmed()) {
+                observer.onCompleted();
+                observers.remove(booking);
+            }
         }
     }
 
@@ -598,6 +658,11 @@ public class ParkData {
         if (!attraction.isTimeSlotValid(timeSlot)) {
             throw new InvalidException(CommonUtils.INVALID_SLOT);
         }
+    }
+
+    private Semaphore getOrAddSemaphore(ServerAttraction attraction, Integer day) {
+        semaphores.get(attraction).putIfAbsent(day, new Semaphore(1));
+        return semaphores.get(attraction).get(day);
     }
 
 }
