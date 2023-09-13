@@ -20,13 +20,12 @@ public class ServerBooking {
 
     public ServerBooking(BookRequest bookRequest) {
         this.attractionName = bookRequest.getAttractionName();
-        this.day = bookRequest.getDay();
-        this.slot = LocalTime.parse(bookRequest.getTimeSlot(), CommonUtils.formatter);
-        this.userId = UUID.fromString(bookRequest.getUUID());
+        this.day = CommonUtils.validateDay(bookRequest.getDay());
+        this.slot = CommonUtils.parseTime(bookRequest.getTimeSlot());
+        this.userId = CommonUtils.validateUserId(bookRequest.getUUID());
         this.isConfirmed = false;
         this.bookingTime = LocalDateTime.now();
         this.confirmedTime = null;
-        CommonUtils.validateDay(this.day);
     }
 
     public LocalTime getSlot() {
@@ -61,7 +60,8 @@ public class ServerBooking {
     }
 
     public boolean equalsNotificationRequest(NotificationRequest request) {
-        return this.attractionName.equals(request.getAttractionName()) && this.day == request.getDay() && this.userId.equals(UUID.fromString(request.getUUID()));
+        return this.attractionName.equals(request.getAttractionName()) && this.day == request.getDay()
+                && this.userId.equals(CommonUtils.validateUserId(request.getUUID()));
     }
 
     @Override
@@ -79,5 +79,10 @@ public class ServerBooking {
     @Override
     public int hashCode() {
         return Objects.hash(attractionName, day, slot, userId);
+    }
+
+    @Override
+    public String toString() {
+        return "ServerBooking{" + "attractionName='" + attractionName + '\'' + ", day=" + day + ", slot=" + slot + ", userId=" + userId + ", isConfirmed=" + isConfirmed + ", bookingTime=" + bookingTime + ", confirmedTime=" + confirmedTime + '}';
     }
 }

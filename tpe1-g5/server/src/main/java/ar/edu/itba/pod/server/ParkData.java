@@ -15,6 +15,8 @@ import ar.edu.itba.pod.server.models.ServerTicket;
 import ar.edu.itba.pod.server.utils.CommonUtils;
 import com.google.protobuf.StringValue;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -25,6 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class ParkData {
+
+    private final static Logger logger = LoggerFactory.getLogger(ParkData.class);
     // Attraction -> Day -> TimeSlot -> List<Book>
     private final Map<ServerAttraction, Map<Integer, Map<LocalTime, List<ServerBooking>>>> bookings = new ConcurrentHashMap<>();
     // Attraction -> Day -> Capacity
@@ -47,16 +51,21 @@ public class ParkData {
         //  si InvalidTime --
         //  si slotSize negative --
         //  si slotSize not enough --
+        logger.debug("addAttraction() - Started!");
+
         if (attractions.containsKey(attraction.getAttractionName())) {
             throw new AlreadyExistsException(CommonUtils.ATTRACTION_ALREADY_EXISTS);
         }
 
         synchronized (attraction) {
+            logger.debug("Added: " + attraction);
             attractions.put(attraction.getAttractionName(), attraction);
             bookings.put(attraction, new ConcurrentHashMap<>());
             capacities.put(attraction, new ConcurrentHashMap<>());
             semaphores.put(attraction, new ConcurrentHashMap<>());
         }
+
+        logger.debug("addAttraction() - Done!");
     }
 
     public void addTicket(final ServerTicket ticket) {
@@ -64,6 +73,8 @@ public class ParkData {
         // si type not valid --
         // si day not valid --
         // si already has ticket --
+        logger.debug("addTicket() - Started!");
+
         final UUID userId = ticket.getUserId();
         final Map<Integer, ServerTicket> userTickets = tickets.get(userId);
         if (userTickets != null && userTickets.containsKey(ticket.getDay())) {
@@ -71,9 +82,12 @@ public class ParkData {
         }
 
         synchronized (ticket) {
+            logger.debug("Added: " + ticket);
             tickets.putIfAbsent(ticket.getUserId(), new ConcurrentHashMap<>());
             tickets.get(ticket.getUserId()).put(ticket.getDay(), ticket);
         }
+
+        logger.debug("addTicket() - Done!");
     }
 
     public AddSlotResponse addSlot(final AddSlotRequest request) {
@@ -82,6 +96,8 @@ public class ParkData {
         // si el día es inválido --
         // si la capacidad es negativa --
         // si ya se cargó una capacidad para esa atracción y día --
+        logger.debug("addSlot() - Started!");
+
         final ServerAttraction attraction = validateAttractionExists(request.getAttractionName());
 
         if(request.getCapacity() <= 0){
@@ -103,11 +119,14 @@ public class ParkData {
             semaphore.acquire();
             response = reorganizeBookings(attraction, request.getDay(), request.getCapacity());
         } catch (InterruptedException e) {
+            logger.error("addSlot() - Interrupted semaphore");
             Thread.currentThread().interrupt();
         } finally {
+            logger.debug("addSlot() - Semaphore released");
             semaphore.release();
         }
 
+        logger.debug("addSlot() - Done!");
         return response;
     }
 
@@ -127,29 +146,33 @@ public class ParkData {
         int relocated = 0;
         int cancelled = 0;
 
-
         // Recorremos las reservas y los horarios disponibles
         for (Map.Entry<LocalTime, List<ServerBooking>> entry : capacityBookings.entrySet()) {
             final List<ServerBooking> reservations = entry.getValue();
             ServerBooking currentBooking;
 
             // Confirmamos todas las que se puedan
-            for (int i = 0; i < capacity; i++) {
-                currentBooking = reservations.get(i);
-                currentBooking.setConfirmed(true);
-                currentBooking.setConfirmedTime(LocalDateTime.now());
+            if (!reservations.isEmpty()) {
+                for (int i = 0; i < capacity && i < reservations.size(); i++) {
+                    currentBooking = reservations.get(i);
+                    currentBooking.setConfirmed(true);
+                    currentBooking.setConfirmedTime(LocalDateTime.now());
 
-                // Notificamos que se cargo la capacidad Y que se confirmo la reserva
-                notifyIfCapacityIsAnnounced(attraction, day, capacity, currentBooking, CommonUtils.CONFIRMED);
-                confirmed++;
+                    // Notificamos que se cargo la capacidad Y que se confirmo la reserva
+                    notifyIfCapacityIsAnnounced(attraction, day, capacity, currentBooking, CommonUtils.CONFIRMED);
+                    confirmed++;
+                }
             }
 
-            // Agregamos las excedentes a la lista de reservas a mover
-            for (int i = capacity; i < reservations.size(); i++) {
-                currentBooking = reservations.get(i);
-                toMove.add(currentBooking);
+            if (reservations.size() > capacity) {
+                // Agregamos las excedentes a la lista de reservas a mover
+                for (int i = capacity; i < reservations.size(); i++) {
+                    currentBooking = reservations.get(i);
+                    toMove.add(currentBooking);
+                }
+                reservations.subList(capacity, reservations.size()).clear();
             }
-            reservations.subList(capacity, reservations.size()).clear();
+
         }
 
         for (ServerBooking booking : toMove) {
@@ -200,6 +223,7 @@ public class ParkData {
         // si el slot es inválido --
         // si no cuenta con un pase válido para ese día --
         // si se intenta reservar y ya se alcanzó la capacidad --
+        logger.debug("book() - Started!");
 
         final ServerAttraction attraction = validateAttractionExists(booking.getAttractionName());
         final ServerTicket ticket = validateTicketExists(booking.getUserId(), booking.getDay());
@@ -210,7 +234,6 @@ public class ParkData {
 
             try {
                 semaphore.acquire();
-
                 final int day = booking.getDay();
                 final Integer capacity = getDayCapacity(attraction, day);
                 bookings.get(attraction).putIfAbsent(day, new ConcurrentHashMap<>());
@@ -218,12 +241,13 @@ public class ParkData {
 
                 final List<ServerBooking> books = bookings.get(attraction).get(day).get(booking.getSlot());
 
+                if (books.contains(booking)) {
+                    semaphore.release();
+                    throw new AlreadyExistsException(CommonUtils.BOOKING_ALREADY_EXISTS);
+                }
+
                 if (capacity != null) {
                     if (books.size() < capacity) {
-                        if (books.contains(booking)) {
-                            semaphore.release();
-                            throw new AlreadyExistsException(CommonUtils.BOOKING_ALREADY_EXISTS);
-                        }
                         books.add(booking);
                         booking.setConfirmed(true);
                         booking.setConfirmedTime(LocalDateTime.now());
@@ -237,14 +261,17 @@ public class ParkData {
                 }
 
             } catch (InterruptedException e) {
+                logger.error("book() - Interrupted semaphore");
                 Thread.currentThread().interrupt();
             } finally {
+                logger.debug("book() - Interrupted released");
                 semaphore.release();
             }
-        }
-        else {
+        } else {
             throw new InvalidException(CommonUtils.INVALID_BOOK_TYPE);
         }
+
+        logger.debug("book() - Done!");
     }
 
     public List<AttractionResponse> getAttractions() {
@@ -267,6 +294,7 @@ public class ParkData {
         // si el slot es inálido --
         // si el rango de slot es inválido --
         // El orden de impresión es cronológico y desempata alfabéticamente por el nombre de la atracción --
+        logger.debug("getAvailability() - Started!");
 
         final LocalTime startTime = CommonUtils.parseTime(request.getTimeRangeStart());
 
@@ -292,6 +320,8 @@ public class ParkData {
             }
             return slotComparison;
         });
+
+        logger.debug("getAvailability() - Done!");
 
         return availabilityResponses;
     }
@@ -353,6 +383,7 @@ public class ParkData {
         // si el día es inválido --
         // si el slot es inválido --
         // si no cuenta con un pase válido para ese día --
+        logger.debug("confirmBooking() - Started!");
 
         final ServerAttraction attraction = validateAttractionExists(booking.getAttractionName());
         validateTimeSlot(attraction,booking.getSlot());
@@ -384,10 +415,14 @@ public class ParkData {
             toConfirmBook.setConfirmed(true);
             toConfirmBook.setConfirmedTime(LocalDateTime.now());
         } catch (InterruptedException e) {
+            logger.error("confirmBooking() - Semaphore interrupted!");
             Thread.currentThread().interrupt();
         } finally {
+            logger.debug("confirmBooking() - Semaphore released");
             semaphore.release();
         }
+
+        logger.debug("confirmBooking() - Done!");
     }
 
     public void cancelBooking(final ServerBooking booking) {
@@ -397,6 +432,7 @@ public class ParkData {
         // si el día es inválido --
         // si el slot es inválido --
         // si no cuenta con un pase válido para ese día --
+        logger.debug("cancelBooking() - Started!");
 
         final ServerAttraction attraction = validateAttractionExists(booking.getAttractionName());
         validateTimeSlot(attraction,booking.getSlot());
@@ -416,10 +452,14 @@ public class ParkData {
             }
 
         } catch (InterruptedException e) {
+            logger.error("cancelBooking() - Semaphore interrupted");
             Thread.currentThread().interrupt();
         } finally {
+            logger.debug("cancelBooking() - Semaphore released");
             semaphore.release();
         }
+
+        logger.debug("cancelBooking() - Done!");
     }
 
     private Integer getDayCapacity(final ServerAttraction attraction, final int day) {
@@ -433,9 +473,9 @@ public class ParkData {
         // En orden descendente por la capacidad sugerida, a partir del día del año.
         // Falla si el día es inválido --
         // Si la atracción ya cuenta con una capacidad cargada entonces no debe listarse en la consulta
+        logger.debug("SuggestedCapacity() - Started!");
 
         CommonUtils.validateDay(day);
-
         final List<SuggestedCapacity> suggestedCapacities = new ArrayList<>();
 
         for (ServerAttraction attraction : attractions.values()) {
@@ -451,6 +491,9 @@ public class ParkData {
         suggestedCapacities.sort((capacity1, capacity2) ->
                 Integer.compare(capacity2.getSuggestedCapacity(), capacity1.getSuggestedCapacity())
         );
+
+        logger.debug("SuggestedCapacity() - Done!");
+
         return suggestedCapacities;
     }
 
@@ -479,9 +522,9 @@ public class ParkData {
     public List<BookingResponse> getBookings(final int day) {
         // En orden de confirmación de la reserva, a partir del día del año
         // Falla si el día es inválido
+        logger.debug("getBookings() - Started!");
 
         CommonUtils.validateDay(day);
-
         final List<BookingResponse> bookingsByDay = new ArrayList<>();
 
         for (Map<Integer, Map<LocalTime, List<ServerBooking>>> reservationsByDay : bookings.values()) {
@@ -506,6 +549,8 @@ public class ParkData {
             }
         }
 
+        logger.debug("getBookings() - Done!");
+
         return bookingsByDay;
     }
 
@@ -519,16 +564,19 @@ public class ParkData {
         // si no cuenta con un pase válido para ese día --
         // si ya estaba registrado para ser notificado de esa atracción ese día --
         // Adicional de diseño: Falla si no tiene ninguna reserva para esa atracción ese día
+        logger.debug("follow() - Started!");
 
         CommonUtils.validateDay(request.getDay());
         final ServerAttraction attraction = validateAttractionExists(request.getAttractionName());
-        validateTicketExists(UUID.fromString(request.getUUID()), request.getDay());
+        final UUID userId = CommonUtils.validateUserId(request.getUUID());
+
+        validateTicketExists(userId, request.getDay());
 
         if (isFollowing(request) != null) {
             throw new AlreadyExistsException(CommonUtils.ALREADY_FOLLOWING);
         }
 
-        final ServerBooking booking = getMostRecentBooking(attraction, request.getDay(), UUID.fromString(request.getUUID()));
+        final ServerBooking booking = getMostRecentBooking(attraction, request.getDay(), userId);
 
         if (booking == null) {
             throw new NotFoundException(CommonUtils.BOOKING_NOT_FOUND);
@@ -542,11 +590,14 @@ public class ParkData {
             observer.onCompleted();
             return;
         }
+
         observer.onNext(StringValue.newBuilder().setValue(
                 String.format(CommonUtils.BOOK_STATUS, booking.getAttractionName(),
                         booking.getSlot().toString(),booking.getDay(), CommonUtils.PENDING)
         ).build());
         observers.put(booking, observer);
+
+        logger.debug("follow() - Done!");
     }
 
     public void unfollow(final NotificationRequest request) {
@@ -555,10 +606,11 @@ public class ParkData {
         // si el día es inválido --
         // si no cuenta con un pase válido para ese día --
         // si no estaba registrado para ser notificado de esa atracción ese día --
+        logger.debug("unfollow() - Started!");
 
         CommonUtils.validateDay(request.getDay());
         validateAttractionExists(request.getAttractionName());
-        validateTicketExists(UUID.fromString(request.getUUID()), request.getDay());
+        validateTicketExists(CommonUtils.validateUserId(request.getUUID()), request.getDay());
 
         final ServerBooking booking = isFollowing(request);
 
@@ -568,6 +620,7 @@ public class ParkData {
 
         observers.get(booking).onCompleted();
         observers.remove(booking);
+        logger.debug("unfollow() - Done!");
     }
 
     private ServerBooking getMostRecentBooking(final ServerAttraction attraction, final int day, final UUID userId) {
@@ -674,7 +727,7 @@ public class ParkData {
         }
     }
 
-    private Semaphore getOrAddSemaphore(ServerAttraction attraction, Integer day) {
+    private Semaphore getOrAddSemaphore(final ServerAttraction attraction, final Integer day) {
         semaphores.get(attraction).putIfAbsent(day, new Semaphore(1));
         return semaphores.get(attraction).get(day);
     }

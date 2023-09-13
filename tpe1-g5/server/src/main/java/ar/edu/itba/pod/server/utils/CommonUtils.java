@@ -1,10 +1,12 @@
 package ar.edu.itba.pod.server.utils;
 
+import ar.edu.itba.pod.grpc.park_admin.TicketType;
 import ar.edu.itba.pod.server.exceptions.InvalidException;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.UUID;
 
 public class CommonUtils {
 
@@ -30,6 +32,8 @@ public class CommonUtils {
     public final static String ALREADY_UNFOLLOWING = "Already unfollowing";
     public final static String NEGATIVE_SLOT = "Slot size must be a positive number";
     public final static String SLOT_SIZE_NOT_ENOUGH = "Slot size not enough";
+    public final static String INVALID_UUID = "Invalid UUID";
+    public final static String INVALID_TICKET_TYPE = "Invalid ticket type";
     public final static String CONFIRMED = "CONFIRMED";
     public final static String CANCELLED = "CANCELLED";
     public final static String PENDING = "PENDING";
@@ -45,15 +49,32 @@ public class CommonUtils {
         }
     }
 
-    public static void validateDay(final Integer day){
+    public static Integer validateDay(final Integer day){
         if (day < MIN_DAY || day > MAX_DAY) {
             throw new InvalidException(INVALID_DAY);
         }
+        return day;
     }
 
     public static void validateTimeRange(final LocalTime startTime, final LocalTime endTime){
         if (endTime.isBefore(startTime)) {
             throw new InvalidException(INVALID_TIME);
+        }
+    }
+
+    public static UUID validateUserId(final String userId){
+        try {
+            return UUID.fromString(userId);
+        } catch(IllegalArgumentException e) {
+            throw new InvalidException(CommonUtils.INVALID_UUID);
+        }
+    }
+
+    public static TicketType validateTicketType(final String ticketType) {
+        try {
+            return TicketType.valueOf(ticketType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidException(INVALID_TICKET_TYPE);
         }
     }
 

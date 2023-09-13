@@ -1,9 +1,7 @@
 package ar.edu.itba.pod.server.models;
 
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import ar.edu.itba.pod.grpc.park_admin.*;
@@ -19,8 +17,8 @@ public class ServerAttraction {
 
     public ServerAttraction(AddAttractionRequest attractionRequest) {
         this.attractionName = attractionRequest.getAttractionName();
-        this.openingTime = LocalTime.parse(attractionRequest.getOpeningTime(), CommonUtils.formatter);
-        this.closingTime = LocalTime.parse(attractionRequest.getClosingTime(), CommonUtils.formatter);
+        this.openingTime = CommonUtils.parseTime(attractionRequest.getOpeningTime());
+        this.closingTime = CommonUtils.parseTime(attractionRequest.getClosingTime());
         this.slotSize = attractionRequest.getSlotSize();
         validateParameters();
         addTimeSlots();
@@ -84,5 +82,12 @@ public class ServerAttraction {
     @Override
     public int hashCode() {
         return this.attractionName.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s %s-%s with slot of %d min",
+                this.attractionName, this.openingTime.toString(), this.closingTime.toString(), this.slotSize
+                );
     }
 }

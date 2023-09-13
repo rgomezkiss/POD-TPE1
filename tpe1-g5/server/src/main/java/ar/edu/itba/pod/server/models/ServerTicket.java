@@ -2,7 +2,6 @@ package ar.edu.itba.pod.server.models;
 
 import ar.edu.itba.pod.grpc.park_admin.AddTicketRequest;
 import ar.edu.itba.pod.grpc.park_admin.TicketType;
-import ar.edu.itba.pod.server.exceptions.InvalidException;
 import ar.edu.itba.pod.server.utils.CommonUtils;
 
 import java.time.LocalTime;
@@ -16,16 +15,10 @@ public class ServerTicket {
     private int bookings;
 
     public ServerTicket(AddTicketRequest ticket) {
-        this.userId = UUID.fromString(ticket.getUUID());
-        this.day = ticket.getTicketDay();
-        try {
-            this.ticketType = TicketType.valueOf(ticket.getTicketType().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new InvalidException("Invalid ticket type");
-        }
+        this.userId = CommonUtils.validateUserId(ticket.getUUID());
+        this.day = CommonUtils.validateDay(ticket.getTicketDay());
+        this.ticketType = CommonUtils.validateTicketType(ticket.getTicketType());
         this.bookings = 0;
-        CommonUtils.validateDay(this.day);
-
     }
 
     public boolean canBook(LocalTime timeSlot) {
@@ -71,6 +64,11 @@ public class ServerTicket {
     @Override
     public int hashCode() {
         return Objects.hash(userId, day);
+    }
+
+    @Override
+    public String toString() {
+        return "ServerTicket{" + "userId=" + userId + ", day=" + day + ", ticketType=" + ticketType + ", bookings=" + bookings + '}';
     }
 }
 

@@ -15,13 +15,11 @@ public class ConsultParser {
     private final static String ACTION = "Daction";
     private final static String DAY = "Dday";
     private final static String PATH = "DoutPath";
-    private final static String VISITOR = "Dvisitor";
 
     public ConsultParser() {
         options.addRequiredOption(SERVER_ADDRESS, SERVER_ADDRESS, true, "Admin server address");
         options.addRequiredOption(ACTION, ACTION, true, "Action to perform");
         options.addRequiredOption(DAY, DAY, true, "Day of the year");
-        options.addRequiredOption(VISITOR, VISITOR, true, "Visitor ID");
         options.addOption(PATH, PATH, true, "Output file path");
     }
 

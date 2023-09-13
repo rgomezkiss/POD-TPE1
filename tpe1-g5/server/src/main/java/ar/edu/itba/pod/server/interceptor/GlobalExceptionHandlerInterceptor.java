@@ -31,6 +31,7 @@ public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
             errorCodesByException.put(InvalidException.class, Code.INVALID_ARGUMENT);
             errorCodesByException.put(NotFoundException.class, Code.NOT_FOUND);
             errorCodesByException.put(UnavailableException.class, Code.UNAVAILABLE);
+            errorCodesByException.put(IllegalArgumentException.class, Code.UNKNOWN);
         }
 
         @Override
